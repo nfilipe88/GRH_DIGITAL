@@ -1,0 +1,100 @@
+<div class="container mx-auto p-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">
+    CU-01: Gestão de Instituições
+  </h1>
+
+  <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+
+    <h2 class="text-xl font-semibold mb-4">
+      {{ idInstituicaoEmEdicao ? 'Editar Instituição' : 'Adicionar Nova Instituição' }}
+    </h2>
+
+    <form (ngSubmit)="onSubmit()" #instituicaoForm="ngForm">
+
+      <div *ngIf="feedbackMessage"
+           [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+           class="p-4 rounded mb-4">
+        {{ feedbackMessage }}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+          <label for="nome" class="block text-sm font-medium text-gray-700">Nome da Instituição</label>
+          <input type="text" id="nome" name="nome" required
+                 [(ngModel)]="dadosFormulario.nome"
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <div>
+          <label for="identificador" class="block text-sm font-medium text-gray-700">Identificador Único (Slug)</label>
+          <input type="text" id="identificador" name="identificador" required
+                 [(ngModel)]="dadosFormulario.identificadorUnico"
+                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                 placeholder="ex: minha-empresa-1">
+          <p class="text-xs text-gray-500 mt-1">Apenas letras minúsculas, números e hífenes.</p>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3">
+
+        <button *ngIf="idInstituicaoEmEdicao"
+                type="button" (click)="cancelarEdicao()"
+                class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+          Cancelar
+        </button>
+
+        <button type="submit" [disabled]="!instituicaoForm.form.valid"
+                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+          {{ idInstituicaoEmEdicao ? 'Atualizar Instituição' : 'Criar Instituição' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-semibold mb-4">Instituições Registadas</h2>
+
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identificador</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+
+        <tr *ngFor="let inst of listaInstituicoes">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ inst.nome }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{{ inst.identificadorUnico }}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span [ngClass]="inst.isAtiva ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+              {{ inst.isAtiva ? 'Ativa' : 'Inativa' }}
+            </span>
+          </td>
+
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+
+            <button (click)="selecionarParaEditar(inst)"
+                    class="text-blue-600 hover:text-blue-900">
+              Editar
+            </button>
+
+            <button (click)="mudarEstado(inst)"
+                    [ngClass]="inst.isAtiva ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'">
+              {{ inst.isAtiva ? 'Inativar' : 'Reativar' }}
+            </button>
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="listaInstituicoes.length === 0" class="text-center py-4 text-gray-500">
+      Nenhuma instituição encontrada.
+    </div>
+  </div>
+</div>
