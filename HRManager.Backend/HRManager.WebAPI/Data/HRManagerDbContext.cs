@@ -17,8 +17,9 @@ public class HRManagerDbContext : DbContext
     }
 
     // Mapeia os nossos modelos para tabelas no PostgreSQL
-    public DbSet<Instituicao> Instituicoes { get; set; }
     public DbSet<Colaborador> Colaboradores { get; set; }
+    public DbSet<Instituicao> Instituicoes { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +33,10 @@ public class HRManagerDbContext : DbContext
         //[cite_start]// Configurar regras do modelo (baseado na RN-02.1) [cite: 88]
         modelBuilder.Entity<Colaborador>()
             .HasIndex(c => new { c.NIF, c.InstituicaoId }) // NIF deve ser único POR instituição
+            .IsUnique();
+        // Garante que não existem dois utilizadores com o mesmo email
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
             .IsUnique();
     }
 

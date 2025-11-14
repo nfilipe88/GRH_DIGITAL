@@ -5,20 +5,49 @@ namespace HRManager.WebAPI.Models
 {
     public class Colaborador
     {
+        [Key] // Define a chave primária
         public int Id { get; set; }
 
+        // --- Secção 1: Dados Pessoais ---
         [Required]
+        [MaxLength(200)]
         public string NomeCompleto { get; set; }
 
         [Required]
-        public string NIF { get; set; } // Número de Identificação [cite: 80]
-        [Required]
-        public int NumeroAgente { get; set; } // Número de Identificação Único do funcionário [cite: 80]
+        [MaxLength(20)]
+        public string NIF { get; set; } // Número de Identificação Fiscal 
+
+        public int? NumeroAgente { get; set; } // Opcional por agora 
 
         [Required]
+        [EmailAddress]
+        [MaxLength(100)]
         public string EmailPessoal { get; set; }
 
+        public DateTime? DataNascimento { get; set; } // 
+
+        // --- Secção 2: Dados Contratuais ---
+        [Required]
         public DateTime DataAdmissao { get; set; }
+
+        [MaxLength(100)]
+        public string Cargo { get; set; }
+
+        [MaxLength(100)]
+        public string TipoContrato { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? SalarioBase { get; set; }
+
+        // --- Secção 3: Organização ---
+        [MaxLength(100)]
+        public string Departamento { get; set; }
+
+        [MaxLength(100)]
+        public string Localizacao { get; set; }
+        // Define se o colaborador está ativo ou inativo (Soft Delete)
+        public bool IsAtivo { get; set; } = true;
+        // (Vamos omitir o Gestor Hierárquico no MVP para simplificar)
 
         //[cite_start]// Chave Estrangeira para a Instituição [cite: 80]
         public Guid InstituicaoId { get; set; }

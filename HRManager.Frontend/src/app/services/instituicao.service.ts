@@ -21,7 +21,7 @@ export interface CriarInstituicaoRequest {
 export class InstituicaoService {
   // O URL da nossa API.
   // Certifique-se de que a porta (ex: 5003) corresponde à que o seu backend está a usar.
-  private apiUrl = 'http://localhost:5003/api/Instituicoes';
+  private apiUrl = 'https://localhost:7234/api/Instituicoes';
 
   constructor(private http: HttpClient) { }
 

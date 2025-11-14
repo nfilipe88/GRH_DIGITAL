@@ -2,7 +2,8 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessC
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authInterceptor } from '../core/interceptors/auth.interceptor';
 // import { provideFormsModule } from '@angular/forms';
 
 export const appConfig: ApplicationConfig = {
@@ -12,7 +13,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
 
     // *** ADICIONE ISTO ***
-    provideHttpClient(), // Permite fazer pedidos HTTP (GET, POST, etc.)
+    provideHttpClient(withInterceptors([authInterceptor])), // Permite fazer pedidos HTTP (GET, POST, etc.)
     // provideFormsModule()   // Permite usar ngModel e (ngSubmit) em formulários
   ]
 };

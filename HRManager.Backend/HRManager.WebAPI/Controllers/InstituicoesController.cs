@@ -1,6 +1,5 @@
 ﻿using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +23,7 @@ namespace HRManager.WebAPI.Controllers
         // ---
         [HttpGet]
         public async Task<IActionResult> GetInstituicoes()
-        {
+         {
             // Vai à base de dados, busca todas as instituições e envia como resposta
             var instituicoes = await _context.Instituicoes.ToListAsync();
             return Ok(instituicoes); // Retorna um status 200 OK com os dados

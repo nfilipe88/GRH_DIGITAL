@@ -1,0 +1,72 @@
+<div class="container mx-auto p-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">
+    Gestão de Utilizadores
+  </h1>
+
+  <form (ngSubmit)="onSubmit()" #registerForm="ngForm"
+        class="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
+
+    <h2 class="text-xl font-semibold mb-4">Registar Novo Utilizador</h2>
+
+    @if (feedbackMessage) {
+      <div
+        [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+        class="p-4 rounded mb-4">
+        {{ feedbackMessage }}
+      </div>
+    }
+
+    <div class="space-y-6">
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email do Utilizador</label>
+        <input type="email" id="email" name="email" required
+               [(ngModel)]="dadosFormulario.email"
+               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Senha (mín. 6 caracteres)</label>
+        <input type="password" id="password" name="password" required
+               [(ngModel)]="dadosFormulario.password"
+               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <div>
+        <label for="role" class="block text-sm font-medium text-gray-700">Função (Role)</label>
+        <select id="role" name="role" required
+                [(ngModel)]="dadosFormulario.role"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <option value="GestorRH">Gestor de RH Institucional</option>
+          <option value="GestorMaster">Gestor Master (Administrador)</option>
+        </select>
+      </div>
+
+      @if (dadosFormulario.role === 'GestorRH') {
+        <div>
+          <label for="instituicao" class="block text-sm font-medium text-gray-700">Instituição *</label>
+          <select id="instituicao" name="instituicao" required
+                  [(ngModel)]="dadosFormulario.instituicaoId"
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <option [ngValue]="null" disabled>Selecione uma instituição...</option>
+            @for (inst of listaInstituicoes; track inst.id) {
+              <option [value]="inst.id">{{ inst.nome }}</option>
+            }
+          </select>
+          @if (listaInstituicoes.length === 0) {
+            <p class="text-xs text-red-600 mt-1">Nenhuma instituição ativa encontrada. Crie uma primeiro.</p>
+          }
+        </div>
+      }
+
+    </div>
+
+    <div class="mt-8 text-right">
+      <button type="submit" [disabled]="!registerForm.form.valid"
+              class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+        Registar Utilizador
+      </button>
+    </div>
+  </form>
+
+  </div>

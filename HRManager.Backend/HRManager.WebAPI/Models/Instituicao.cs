@@ -1,5 +1,4 @@
-﻿using HRManager.Domain.Entities;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace HRManager.WebAPI.Models
 {

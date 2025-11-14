@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-gestao-instituicoes',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './gestao-instituicoes.html',
   styleUrl: './gestao-instituicoes.css',
@@ -30,6 +29,9 @@ export class GestaoInstituicoes implements OnInit {
   // Mensagem de feedback (sucesso ou erro)
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
+
+  // *** ADICIONAR ESTA PROPRIEDADE ***
+  public isModalAberto: boolean = false;
 
   // Injetar o nosso serviço para o podermos usar
   constructor(private instituicaoService: InstituicaoService) {}
@@ -67,8 +69,9 @@ export class GestaoInstituicoes implements OnInit {
       this.instituicaoService.atualizarInstituicao(this.idInstituicaoEmEdicao, this.dadosFormulario).subscribe({
         next: (instituicaoAtualizada) => {
           this.mostrarFeedback(`Instituição "${instituicaoAtualizada.nome}" atualizada com sucesso!`, false);
-          this.resetarFormulario();
-          this.carregarInstituicoes(); // Recarrega a lista
+          this.carregarInstituicoes();
+          // *** ADICIONAR LINHA ***
+          this.fecharModal();
         },
         error: (err) => {
           this.mostrarFeedback(err.error?.message || 'Erro ao atualizar instituição.', true);
@@ -79,8 +82,9 @@ export class GestaoInstituicoes implements OnInit {
       this.instituicaoService.criarInstituicao(this.dadosFormulario).subscribe({
         next: (nova) => {
           this.mostrarFeedback(`Instituição "${nova.nome}" criada com sucesso!`, false);
-          this.resetarFormulario();
-          this.carregarInstituicoes(); // Recarrega a lista
+          this.carregarInstituicoes();
+          // *** ADICIONAR LINHA ***
+          this.fecharModal();
         },
         error: (err) => {
           this.mostrarFeedback(err.error?.message || 'Erro ao criar instituição.', true);
@@ -90,7 +94,7 @@ export class GestaoInstituicoes implements OnInit {
   }
 
   /**
-   * NOVO MÉTODO: Prepara o formulário para edição.
+   * Prepara o formulário para edição.
    */
   public selecionarParaEditar(instituicao: Instituicao): void {
     this.idInstituicaoEmEdicao = instituicao.id;
@@ -98,17 +102,8 @@ export class GestaoInstituicoes implements OnInit {
       nome: instituicao.nome,
       identificadorUnico: instituicao.identificadorUnico
     };
-    this.limparFeedback();
-
-    // Fazer scroll para o topo (onde está o formulário)
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  /**
-   * NOVO MÉTODO: Cancela a edição e limpa o formulário.
-   */
-  public cancelarEdicao(): void {
-    this.resetarFormulario();
+    // *** ADICIONAR LINHA ***
+    this.isModalAberto = true;
     this.limparFeedback();
   }
 
@@ -117,7 +112,7 @@ export class GestaoInstituicoes implements OnInit {
    */
   public mudarEstado(instituicao: Instituicao): void {
     // Pergunta de confirmação
-    const acao = instituicao.isAtiva ? "inativar" : "reativar";
+    const acao = instituicao.isAtiva ? "inativa" : "reativa";
     if (!confirm(`Tem a certeza que deseja ${acao} a instituição "${instituicao.nome}"?`)) {
       return;
     }
@@ -137,6 +132,24 @@ export class GestaoInstituicoes implements OnInit {
         this.mostrarFeedback(err.error?.message || `Erro ao ${acao} instituição.`, true);
       }
     });
+  }
+
+  /**
+   * Abre o modal para criar uma NOVA instituição
+   */
+  public abrirModalNovo(): void {
+    this.resetarFormulario();
+    this.limparFeedback();
+    this.isModalAberto = true;
+  }
+
+  /**
+   * Fecha o modal e limpa tudo
+   */
+  public fecharModal(): void {
+    this.isModalAberto = false;
+    this.resetarFormulario();
+    this.limparFeedback();
   }
 
   // --- Métodos Auxiliares ---

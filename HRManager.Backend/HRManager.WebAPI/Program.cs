@@ -1,8 +1,11 @@
-using Microsoft.EntityFrameworkCore;
+using HRManager.Application.Interfaces;
+using HRManager.WebAPI.Domain.Interfaces;
+using HRManager.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using HRManager.Application.Interfaces;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -30,7 +33,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+// builder.Services.AddControllers();
+// 2. Modifique esta linha
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    // Esta é a correção: Ignora os ciclos de referência ao converter para JSON
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
 
 builder.Services.AddDbContext<HRManagerDbContext>(options =>
 {
@@ -72,6 +81,7 @@ builder.Services.AddAuthentication(options =>
 
 // Adicionar o TenantService como Scoped (para cada pedido)
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
 
@@ -87,7 +97,7 @@ app.UseHttpsRedirection();
 
 app.UseCors(AllowAngularOrigin);
 // Adicionar o middleware de Autenticação e Autorização
-//app.UseAuthentication();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
