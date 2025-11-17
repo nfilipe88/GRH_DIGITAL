@@ -1,8 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { AuthService, RegisterRequest } from '../../services/auth.service';
 import { InstituicaoService, Instituicao } from '../../services/instituicao.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AuthService, RegisterRequest, UserListDto } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-gestao-utilizadores',
@@ -18,10 +18,18 @@ export class GestaoUtilizadores implements OnInit {
   // --- Estado do Formulário ---
   public dadosFormulario: RegisterRequest;
   public listaInstituicoes: Instituicao[] = [];
+  public listaUtilizadores: UserListDto[] = [];
+
+  // *** 1. ADICIONAR ESTADO DO MODAL ***
+  public isModalAberto: boolean = false;
 
   // --- Feedback ---
+  // Feedback da PÁGINA (para sucesso de registo, erros de lista)
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
+  // Feedback DO MODAL (para erros de validação do formulário)
+  public feedbackModal: string | null = null;
+  public isErrorModal: boolean = false;
 
   constructor() {
     this.dadosFormulario = this.criarFormularioVazio();
@@ -29,11 +37,9 @@ export class GestaoUtilizadores implements OnInit {
 
   ngOnInit(): void {
     this.carregarInstituicoes();
+    this.carregarUtilizadores();
   }
 
-  /**
-   * Busca instituições ativas para o dropdown
-   */
   carregarInstituicoes(): void {
     this.instituicaoService.getInstituicoes().subscribe({
       next: (data) => {
@@ -45,49 +51,104 @@ export class GestaoUtilizadores implements OnInit {
     });
   }
 
-  /**
-   * Chamado ao submeter o formulário
-   */
-  onSubmit(): void {
-    this.limparFeedback();
-
-    // Ajuste final: InstituicaoId só é relevante se for GestorRH
-    if (this.dadosFormulario.role !== 'GestorRH') {
-      this.dadosFormulario.instituicaoId = null;
-    }
-
-    this.authService.register(this.dadosFormulario).subscribe({
-      next: (response) => {
-        this.mostrarFeedback(response.message || 'Utilizador registado com sucesso!', false);
-        this.dadosFormulario = this.criarFormularioVazio();
-        // No futuro, vamos recarregar uma lista de utilizadores aqui
+  carregarUtilizadores(): void {
+    this.authService.getUsers().subscribe({
+      next: (data) => {
+        this.listaUtilizadores = data;
       },
       error: (err) => {
-        const msg = err.error?.message || 'Erro ao registar utilizador.';
-        this.mostrarFeedback(msg, true);
+        console.error('Erro ao carregar utilizadores:', err);
+        if (err.status === 403) {
+          this.mostrarFeedback('Apenas o Gestor Master pode ver a lista de utilizadores.', true);
+        }
       }
     });
   }
 
-  // --- Métodos Auxiliares ---
+  /**
+   * Chamado ao submeter o formulário
+   */
+  onSubmit(): void {
+    this.limparFeedback(true); // Limpa feedback SÓ do modal
+
+    if (this.dadosFormulario.role !== 'GestorRH') {
+      this.dadosFormulario.instituicaoId = null;
+    }
+    // Validar se GestorRH tem instituição
+    if(this.dadosFormulario.role === 'GestorRH' && !this.dadosFormulario.instituicaoId) {
+        this.mostrarFeedback('Para registar um GestorRH, é obrigatório selecionar uma instituição.', true, true);
+        return;
+    }
+
+    this.authService.register(this.dadosFormulario).subscribe({
+      next: (response) => {
+        // Sucesso: Mostra feedback na PÁGINA
+        this.mostrarFeedback(response.message || 'Utilizador registado com sucesso!', false, false);
+        this.carregarUtilizadores();
+        this.fecharModal(); // Fecha o modal
+      },
+      error: (err) => {
+        // Erro: Mostra feedback DENTRO do modal
+        const msg = err.error?.message || 'Erro ao registar utilizador.';
+        this.mostrarFeedback(msg, true, true);
+      }
+    });
+  }
+
+  // ---
+  // *** 2. NOVOS MÉTODOS DE CONTROLO DO MODAL ***
+  // ---
+
+  /**
+   * Abre o modal para criar um NOVO utilizador
+   */
+  public abrirModalNovo(): void {
+    this.dadosFormulario = this.criarFormularioVazio();
+    this.limparFeedback(true);
+    this.isModalAberto = true;
+  }
+
+  /**
+   * Fecha o modal
+   */
+  public fecharModal(): void {
+    this.isModalAberto = false;
+    this.limparFeedback(true);
+  }
+
+  // ---
+  // *** 3. MÉTODOS AUXILIARES ATUALIZADOS ***
+  // ---
 
   private criarFormularioVazio(): RegisterRequest {
     return {
       email: '',
       password: '',
-      role: 'GestorRH', // 'GestorRH' como padrão
+      role: 'GestorRH',
       instituicaoId: null
     };
   }
 
-  private mostrarFeedback(mensagem: string, ehErro: boolean): void {
-    this.feedbackMessage = mensagem;
-    this.isError = ehErro;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  private mostrarFeedback(mensagem: string, ehErro: boolean, noModal: boolean = false): void {
+    if (noModal) {
+      this.feedbackModal = mensagem;
+      this.isErrorModal = ehErro;
+    } else {
+      this.feedbackMessage = mensagem;
+      this.isError = ehErro;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
-  private limparFeedback(): void {
-    this.feedbackMessage = null;
-    this.isError = false;
+  private limparFeedback(apenasModal: boolean = false): void {
+    if (apenasModal) {
+      this.feedbackModal = null;
+      this.isErrorModal = false;
+    } else {
+      this.feedbackMessage = null;
+      this.isError = false;
+      this.feedbackModal = null;
+      this.isErrorModal = false;
+    }
   }
 }

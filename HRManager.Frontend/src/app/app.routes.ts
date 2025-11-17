@@ -2,45 +2,40 @@ import { Routes } from '@angular/router';
 import { GestaoInstituicoes } from './pages/gestao-instituicoes/gestao-instituicoes';
 import { GestaoColaboradores } from './pages/gestao-colaboradores/gestao-colaboradores';
 import { authGuard } from '../core/guards/auth.guard';
-import { Login } from './pages/login/login';
 import { GestaoUtilizadores } from './pages/gestao-utilizadores/gestao-utilizadores';
+import { Dashboard } from './pages/dashboard/dashboard';
+import { loginGuard } from '../core/guards/login.guards';
+import { AdminLayout } from './layout/admin-layout/admin-layout';
+import { Login } from '../core/auth/login/login';
 
 export const routes: Routes = [
-  // 3. Adicionar a rota de Login
+  // 2. Rota pública de Login.
+  // Será renderizada diretamente no <router-outlet> principal (de app.html)
+  // Não tem layout.
   {
     path: 'login',
     component: Login,
+    canActivate: [loginGuard] // Protege para não aceder ao login se já estiver logado
   },
 
-  // 4. Proteger as nossas rotas de gestão com o 'canActivate'
+  // 3. Rota "pai" que carrega o layout
+  // Esta rota é protegida pelo authGuard.
   {
-    path: 'gestao-instituicoes',
-    component: GestaoInstituicoes,
-    canActivate: [authGuard] // <-- O "Segurança" está aqui
-  },
-  {
-    path: 'gestao-colaboradores',
-    component: GestaoColaboradores,
-    canActivate: [authGuard] // <-- O "Segurança" está aqui
-  },
-  // *** 2. ADICIONE A NOVA ROTA PROTEGIDA ***
-  {
-    path: 'gestao-utilizadores',
-    component: GestaoUtilizadores,
-    canActivate: [authGuard]
+    path: '', // O "path" vazio agora aponta para o Layout
+    component: AdminLayout,
+    canActivate: [authGuard], // Se não estiver logado, o guard redireciona para /login
+
+    // 4. Rotas "filhas" (children)
+    // Estas rotas serão renderizadas DENTRO do <router-outlet> do AdminLayoutComponent
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: Dashboard },
+      { path: 'instituicoes', component: GestaoInstituicoes },
+      { path: 'colaboradores', component: GestaoColaboradores },
+      { path: 'utilizadores', component: GestaoUtilizadores },
+    ]
   },
 
-  // 5. Rota padrão: Se o utilizador aceder a 'localhost:4200'
-  // redireciona para o login ou para a primeira página
-  {
-    path: '',
-    redirectTo: 'gestao-instituicoes',
-    pathMatch: 'full',
-  },
-
-  // (Opcional) Rota "catch-all" para redirecionar para o login
-  {
-    path: '**',
-    redirectTo: 'login'
-  }
+  // Rota "catch-all" para redirecionar para o login ou dashboard
+  { path: '**', redirectTo: 'login' } // Ou para 'dashboard', dependendo da sua lógica
 ];

@@ -1,50 +1,79 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
-import { LoginResponse } from './interfaces/login-response';
+import { LoginResponse } from '../../core/auth/interfaces/login-response';
+
+// *** 1. INTERFACE PARA O PEDIDO DE REGISTO ***
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  role: string;
+  instituicaoId: string | null;
+}
+
+// *** 1. NOVA INTERFACE ***
+export interface UserListDto {
+  id: number;
+  email: string;
+  role: string;
+  nomeInstituicao: string | null;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  // URL base, usa o proxy se estiver em desenvolvimento
-  private apiUrl = '/api/auth/login';
-  private readonly TOKEN_KEY = 'hr_auth_token';
-  private readonly USER_ROLE_KEY = 'hr_user_role';
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
-  constructor(private http: HttpClient) { }
+  private apiUrl = 'https://localhost:7234/api/Auth'; // A sua porta de backend
+  private readonly TOKEN_KEY = 'hr_manager_token'; // Chave para o localStorage
 
-  login(username: string, password: string): Observable<LoginResponse> {
-    const payload = { username, password };
-
-    return this.http.post<LoginResponse>(this.apiUrl, payload).pipe(
-      tap(response => {
-        // Armazenar o token e o papel no LocalStorage após sucesso
+  /**
+   * Tenta fazer login na API
+   */
+  public login(credentials: { email: string; password: string }): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
+      tap((response) => {
+        // 1. Guardar o token no localStorage
         localStorage.setItem(this.TOKEN_KEY, response.token);
-        localStorage.setItem(this.USER_ROLE_KEY, response.role);
-
-        // **Opcional:** Adicione aqui a lógica de navegação para o dashboard
       })
     );
   }
 
-  // Utilizado pelo AuthInterceptor para adicionar o header
-  getToken(): string | null {
+  /**
+   * Faz logout, limpando o token e redirecionando
+   */
+  public logout(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    this.router.navigate(['/login']); // Redireciona para a página de login
+  }
+
+  /**
+   * Pega o token guardado
+   */
+  public getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  // Usado para proteção de rotas (Guards)
-  getRole(): string | null {
-    return localStorage.getItem(this.USER_ROLE_KEY);
+  /**
+   * Verifica se o utilizador está logado (se existe um token)
+   */
+  public isLoggedIn(): boolean {
+    return this.getToken() !== null;
   }
 
-  isLoggedIn(): boolean {
-    return !!this.getToken();
+  /**
+   * *** 2. MÉTODO DE REGISTO ***
+   * Tenta registar um novo utilizador na API
+   */
+  public register(data: RegisterRequest): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/register`, data);
   }
 
-  logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_ROLE_KEY);
-    // Redirecionar para a página de login
+  // *** 2. NOVO MÉTODO ***
+  public getUsers(): Observable<UserListDto[]> {
+    return this.http.get<UserListDto[]>(`${this.apiUrl}/users`);
   }
 }

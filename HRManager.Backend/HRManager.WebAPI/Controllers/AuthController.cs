@@ -1,6 +1,7 @@
 ﻿using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -22,6 +23,7 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpPost("register")]
+        [Authorize(Roles = "GestorMaster, GestorRH")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
@@ -72,6 +74,28 @@ namespace HRManager.WebAPI.Controllers
                 email = user.Email,
                 role = user.Role
             });
+        }
+
+        // --- MÉTODO: Listar Utilizadores ---
+        [HttpGet("users")]
+        [Authorize(Roles = "GestorMaster, GestorRH")] // <-- PROTEGIDO!
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _context.Users
+                .Select(u => new UserListDto
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    Role = u.Role,
+                    // Faz um join opcional para buscar o nome da instituição
+                    NomeInstituicao = _context.Instituicoes
+                                        .Where(i => i.Id == u.InstituicaoId)
+                                        .Select(i => i.Nome)
+                                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return Ok(users);
         }
 
 

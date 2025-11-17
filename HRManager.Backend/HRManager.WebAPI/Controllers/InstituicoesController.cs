@@ -1,5 +1,6 @@
 ﻿using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,7 @@ namespace HRManager.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "GestorMaster")]
     public class InstituicoesController : ControllerBase
     {
         private readonly HRManagerDbContext _context;

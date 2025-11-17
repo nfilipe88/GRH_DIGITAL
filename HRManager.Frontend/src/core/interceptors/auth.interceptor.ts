@@ -1,43 +1,41 @@
-// Em src/app/core/interceptors/auth.interceptor.ts
-
-import { inject, Injectable } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
-import { Observable } from 'rxjs';
+// Em: src/core/interceptors/auth.interceptor.ts
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { AuthService } from '../auth/auth.service';
-// import { AuthService } from '../auth/auth.service';
+import { catchError, throwError } from 'rxjs'; // 1. Importar catchError e throwError
+import { Router } from '@angular/router';
 
-// @Injectable()
-// export class AuthInterceptor implements HttpInterceptor {
-//   constructor(private authService: AuthService) {}
-
-//   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-//     const token = this.authService.getToken();
-
-//     if (token) {
-//       // Clona a request e adiciona o header de Autorização
-//       request = request.clone({
-//         setHeaders: {
-//           Authorization: `Bearer ${token}`
-//         }
-//       });
-//     }
-
-//     return next.handle(request);
-//   }
-// }
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  const router = inject(Router); // 2. Injetar o Router
   const token = authService.getToken();
 
-  // Se não houver token (ex: pedido de login), envia o pedido original
   if (!token) {
     return next(req);
   }
 
-  // Se houver token, clona o pedido e adiciona o cabeçalho de Autorização
   const authReq = req.clone({
     headers: req.headers.set('Authorization', `Bearer ${token}`),
   });
 
-  return next(authReq);
+  // 3. Adicionar o .pipe() para apanhar erros
+  return next(authReq).pipe(
+    catchError((error: any) => {
+
+      // Verificamos se é um erro HTTP e se o status é 401
+      if (error instanceof HttpErrorResponse && error.status === 401) {
+
+        // O token é inválido ou expirou!
+        console.error('Token expirado ou inválido. A fazer logout.');
+
+        // Faz logout (limpa o token) e redireciona para o login
+        authService.logout();
+        router.navigate(['/login'], { queryParams: { reason: 'expired' } });
+      }
+
+      // Reenvia o erro para que o serviço (ex: colaborador.service)
+      // ainda o possa processar (ex: mostrar "Falha ao carregar")
+      return throwError(() => error);
+    })
+  );
 };

@@ -1,5 +1,6 @@
 ﻿using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,7 @@ namespace HRManager.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "GestorMaster, GestorRH")]
     public class ColaboradoresController : ControllerBase
     {
         private readonly HRManagerDbContext _context;
@@ -220,6 +222,7 @@ namespace HRManager.WebAPI.Controllers
         // Mapeado para: DELETE api/Colaboradores/{id}
         // ---
         [HttpDelete("{id}")]
+        [Authorize(Roles = "GestorMaster")]
         public async Task<IActionResult> DeletarColaborador(int id)
         {
             var colaborador = await _context.Colaboradores.FindAsync(id);

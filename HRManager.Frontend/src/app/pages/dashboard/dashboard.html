@@ -1,0 +1,40 @@
+<div *ngIf="stats$ | async as stats; else loading">
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+      <h3 class="text-sm font-medium text-gray-500">Total de Instituições</h3>
+      <p class="mt-2 text-3xl font-bold text-gray-900">
+        {{ stats.totalInstituicoes }}
+      </p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+      <h3 class="text-sm font-medium text-gray-500">Total de Colaboradores</h3>
+      <p class="mt-2 text-3xl font-bold text-gray-900">
+        {{ stats.totalColaboradores }}
+      </p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+      <h3 class="text-sm font-medium text-gray-500">Colaboradores Ativos</h3>
+      <p class="mt-2 text-3xl font-bold text-gray-900">
+        {{ stats.totalColaboradoresAtivos }}
+      </p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+      <h3 class="text-sm font-medium text-gray-500">Total de Utilizadores</h3>
+      <p class="mt-2 text-3xl font-bold text-gray-900">
+        {{ stats.totalUtilizadores }}
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<ng-template #loading>
+  <div classa="flex justify-center items-center p-10">
+    <p class="text-gray-600">A carregar estatísticas...</p>
+    </div>
+</ng-template>

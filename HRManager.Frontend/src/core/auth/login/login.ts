@@ -1,30 +1,51 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [],
+  imports: [FormsModule, ],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login {
-  username='';
-  password='';
-  errorMessage='';
+// Dados do formulário
+  public credentials = {
+    email: '',
+    password: '',
+  };
 
-  constructor(private authService: AuthService) {}
+  // Feedback de erro
+  public errorMessage: string | null = null;
+  public isLoading: boolean = false;
 
-  onSubmit(): void {
-    this.authService.login(this.username, this.password).subscribe({
-      next: (response) => {
-        // Sucesso: Navegar para o Dashboard Global (CU-05)
-        console.log('Login bem-sucedido. Role:', response.role);
-        // Ex: this.router.navigate(['/dashboard']);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  /**
+   * Chamado quando o formulário é submetido
+   */
+  public onSubmit(): void {
+    if (!this.credentials.email || !this.credentials.password) {
+      this.errorMessage = 'Por favor, preencha o email e a senha.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    this.authService.login(this.credentials).subscribe({
+      next: () => {
+        this.isLoading = false;
+        // SUCESSO! Redirecionar para a página principal da app
+        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        this.errorMessage = 'Falha no login. Verifique as credenciais.';
-        console.error('Erro de login:', err);
-      }
+        this.isLoading = false;
+        // FALHA! Mostrar a mensagem de erro da API
+        this.errorMessage = err.error?.message || 'Credenciais inválidas. Tente novamente.';
+      },
     });
   }
 }
