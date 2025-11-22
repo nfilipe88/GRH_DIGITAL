@@ -27,6 +27,6 @@ namespace HRManager.WebAPI.DTOs
         public string Localizacao { get; set; }
 
         [Required] // A Instituição é obrigatória!
-        public Guid InstituicaoId { get; set; }
+        public Guid? InstituicaoId { get; set; }
     }
 }

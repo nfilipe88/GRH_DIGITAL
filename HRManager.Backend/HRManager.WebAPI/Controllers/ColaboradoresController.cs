@@ -1,4 +1,5 @@
-﻿using HRManager.WebAPI.DTOs;
+﻿using HRManager.Application.Interfaces;
+using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace HRManager.WebAPI.Controllers
     public class ColaboradoresController : ControllerBase
     {
         private readonly HRManagerDbContext _context;
+        private readonly ITenantService _tenantService;
 
-        public ColaboradoresController(HRManagerDbContext context)
+        public ColaboradoresController(HRManagerDbContext context, ITenantService tenantService)
         {
             _context = context;
+            _tenantService = tenantService;
         }
 
         // ---
@@ -65,15 +68,38 @@ namespace HRManager.WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CriarColaborador([FromBody] CriarColaboradorRequest request)
         {
+            // --- 5. LÓGICA DE AUTORIZAÇÃO DE INSTITUIÇÃO ---
+            Guid instituicaoIdParaNovoColaborador;
+            // Se for GestorMaster, usa o ID do formulário (dropdown)
+            if (User.IsInRole("GestorMaster"))
+            {
+                if (!request.InstituicaoId.HasValue)
+                {
+                    return BadRequest(new { message = "GestorMaster deve selecionar uma instituição para o novo colaborador." });
+                }
+                instituicaoIdParaNovoColaborador = request.InstituicaoId.Value;
+            }
+            // Se for GestorRH, usa o ID do seu próprio token
+            else
+            {
+                var tenantId = _tenantService.GetTenantId(); // Lê o Claim "InstituicaoId" do token
+                if (tenantId == null)
+                {
+                    return Unauthorized(new { message = "GestorRH não está associado a nenhuma instituição." });
+                }
+                instituicaoIdParaNovoColaborador = tenantId.Value;
+            }
+            // --- FIM DA LÓGICA DE AUTORIZAÇÃO ---
+
             // 1. Validar se a Instituição selecionada existe
-            var instituicao = await _context.Instituicoes.FindAsync(request.InstituicaoId);
+            var instituicao = await _context.Instituicoes.FindAsync(instituicaoIdParaNovoColaborador);
             if (instituicao == null)
             {
                 return BadRequest(new { message = "Instituição selecionada é inválida." });
             }
 
-            //[cite_start]// 2. Validar Regra de Negócio (RN-02.1): Unicidade do NIF por Instituição [cite: 88]
-            if (await _context.Colaboradores.AnyAsync(c => c.NIF == request.NIF && c.InstituicaoId == request.InstituicaoId))
+            // 2. Validar Regra de Negócio (RN-02.1)
+            if (await _context.Colaboradores.AnyAsync(c => c.NIF == request.NIF && c.InstituicaoId == instituicaoIdParaNovoColaborador))
             {
                 return BadRequest(new { message = $"O NIF '{request.NIF}' já está registado nesta instituição." });
             }
@@ -105,7 +131,7 @@ namespace HRManager.WebAPI.Controllers
                 Localizacao = request.Localizacao,
 
                 // Relação
-                InstituicaoId = request.InstituicaoId
+                InstituicaoId = (Guid)request.InstituicaoId
             };
 
             // 4. Adicionar ao DbContext e Salvar
@@ -146,19 +172,39 @@ namespace HRManager.WebAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> AtualizarColaborador(int id, [FromBody] CriarColaboradorRequest request)
         {
-            // Reutilizamos o DTO 'CriarColaboradorRequest' para a atualização
-
             var colaborador = await _context.Colaboradores.FirstOrDefaultAsync(c => c.Id == id);
-
             if (colaborador == null)
             {
                 return NotFound(new { message = "Colaborador não encontrado." });
             }
 
-            // Validar Regra de Negócio (RN-02.1): Unicidade do NIF
-            if (await _context.Colaboradores.AnyAsync(c => c.NIF == request.NIF && c.InstituicaoId == request.InstituicaoId && c.Id != id))
+            Guid instituicaoIdParaAtualizar;
+
+            // Se for GestorMaster, pode (teoricamente) mudar o colaborador de instituição
+            if (User.IsInRole("GestorMaster"))
             {
-                return BadRequest(new { message = $"O NIF '{request.NIF}' já está registado nesta instituição." });
+                if (!request.InstituicaoId.HasValue)
+                {
+                    return BadRequest(new { message = "GestorMaster deve selecionar uma instituição." });
+                }
+                instituicaoIdParaAtualizar = request.InstituicaoId.Value;
+            }
+            // Se for GestorRH, SÓ PODE editar colaboradores da sua própria instituição
+            else
+            {
+                var tenantId = _tenantService.GetTenantId();
+                if (tenantId == null)
+                {
+                    return Unauthorized(new { message = "GestorRH não está associado a nenhuma instituição." });
+                }
+
+                // Medida de Segurança: Garante que um GestorRH não edite
+                // colaboradores de outra instituição (mesmo que saiba o ID)
+                if (colaborador.InstituicaoId != tenantId.Value)
+                {
+                    return Forbid("Não tem permissão para editar colaboradores de outra instituição.");
+                }
+                instituicaoIdParaAtualizar = tenantId.Value;
             }
 
             // --- Mapear os dados do DTO para o modelo da BD ---
@@ -181,7 +227,7 @@ namespace HRManager.WebAPI.Controllers
             // Organização
             colaborador.Departamento = request.Departamento;
             colaborador.Localizacao = request.Localizacao;
-            colaborador.InstituicaoId = request.InstituicaoId;
+            colaborador.InstituicaoId = (Guid)request.InstituicaoId;
             // --- Fim do Mapeamento ---
 
             _context.Colaboradores.Update(colaborador);

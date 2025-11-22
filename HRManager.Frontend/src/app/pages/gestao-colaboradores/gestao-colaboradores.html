@@ -120,18 +120,18 @@
           <p class="mt-1 text-sm leading-6 text-gray-600">Define a posição do colaborador na empresa.</p>
 
           <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-
+            @if(loggedInUserRole === 'GestorRH') {
             <div class="sm:col-span-3">
               <label for="instituicao" class="block text-sm font-medium leading-6 text-gray-900">Instituição *</label>
               <select id="instituicao" name="instituicao" required [(ngModel)]="dadosFormulario.instituicaoId"
                 class="mt-2 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600">
-                <option value="" disabled>Selecione uma instituição...</option>
+                <option [ngValue]="null" disabled>Nenhuma (para criar GestorMaster)</option>
                 @for (inst of listaInstituicoes; track inst.id) {
                 <option [value]="inst.id">{{ inst.nome }}</option>
                 }
               </select>
             </div>
-
+            }
             <div class="sm:col-span-3">
               <label for="dataAdmissao" class="block text-sm font-medium leading-6 text-gray-900">Data de Admissão</label>
               <input type="date" id="dataAdmissao" name="dataAdmissao" required

@@ -1,52 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-
-// Interface para o nosso DTO
-export interface CriarColaboradorRequest {
-  nomeCompleto: string;
-  nif: string;
-  numeroAgente?: number | null;
-  emailPessoal: string;
-  dataNascimento?: string | null; // Datas são enviadas como string
-  dataAdmissao: string; //
-  cargo?: string | null;
-  tipoContrato?: string | null;
-  salarioBase?: number | null;
-  departamento?: string | null;
-  localizacao?: string | null;
-  instituicaoId: string; // Guid é enviado como string
-}
-
-// *** INTERFACE ATUALIZADA ***
-// Corresponde ao nosso novo ColaboradorListDto
-export interface Colaborador {
-  id: number;
-  nomeCompleto: string;
-  emailPessoal: string;
-  nif: string;
-  nomeInstituicao: string; // <-- Mudança principal
-  cargo: string | null;
-  isAtivo: boolean;
-}
-
-// *** NOVA INTERFACE: O modelo COMPLETO do Colaborador ***
-// Isto é o que recebemos do endpoint GET /api/Colaboradores/{id}
-export interface ColaboradorDetails {
-  id: number;
-  nomeCompleto: string;
-  nif: string;
-  numeroAgente: number | null;
-  emailPessoal: string;
-  dataNascimento: string | null; // Vem como string ISO
-  dataAdmissao: string; // Vem como string ISO
-  cargo: string | null;
-  tipoContrato: string | null;
-  salarioBase: number | null;
-  departamento: string | null;
-  localizacao: string | null;
-  instituicaoId: string;
-}
+import { Colaborador } from '../interfaces/colaborador';
+import { ColaboradorDetails } from '../interfaces/colaboradorDetails';
+import { CriarColaboradorRequest } from '../interfaces/criarColaboradorRequest';
 
 @Injectable({
   providedIn: 'root'

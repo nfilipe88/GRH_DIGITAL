@@ -30,14 +30,18 @@ export class AuthService {
   private apiUrl = 'https://localhost:7234/api/Auth'; // A sua porta de backend
   private readonly TOKEN_KEY = 'hr_manager_token'; // Chave para o localStorage
 
+  // *** 1. ADICIONAR UMA CHAVE PARA O CARGO (ROLE) ***
+  private readonly ROLE_KEY = 'hr_manager_role';
+
   /**
    * Tenta fazer login na API
    */
   public login(credentials: { email: string; password: string }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
       tap((response) => {
-        // 1. Guardar o token no localStorage
+        // *** 2. ATUALIZAR O LOGIN PARA GUARDAR AMBOS ***
         localStorage.setItem(this.TOKEN_KEY, response.token);
+        localStorage.setItem(this.ROLE_KEY, response.role); // <-- Guardar o cargo
       })
     );
   }
@@ -47,7 +51,8 @@ export class AuthService {
    */
   public logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
-    this.router.navigate(['/login']); // Redireciona para a página de login
+    localStorage.removeItem(this.ROLE_KEY); // <-- Limpar o cargo
+    this.router.navigate(['/login']);
   }
 
   /**
@@ -55,6 +60,11 @@ export class AuthService {
    */
   public getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  // *** 3. MÉTODO PARA LER O CARGO ***
+  public getUserRole(): string | null {
+    return localStorage.getItem(this.ROLE_KEY);
   }
 
   /**

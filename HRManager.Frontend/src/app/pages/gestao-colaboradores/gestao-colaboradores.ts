@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { Colaborador, ColaboradorService, CriarColaboradorRequest } from '../../services/colaborador.service';
+import { Component, inject, OnInit } from '@angular/core';
+import { ColaboradorService} from '../../services/colaborador.service';
 import { Instituicao, InstituicaoService } from '../../services/instituicao.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../core/auth/auth.service';
+import { Colaborador } from '../../interfaces/colaborador';
+import { CriarColaboradorRequest } from '../../interfaces/criarColaboradorRequest';
 
 @Component({
   selector: 'app-gestao-colaboradores',
@@ -12,46 +15,44 @@ import { CommonModule } from '@angular/common';
   styleUrl: './gestao-colaboradores.css',
 })
 export class GestaoColaboradores implements OnInit {
+  private colaboradorService = inject(ColaboradorService);
+  private instituicaoService = inject(InstituicaoService);
+  private authService = inject(AuthService); // <-- Injetar AuthService
 
-  // --- Propriedades para o Formulário ---
+  // --- Estado ---
   public dadosFormulario: CriarColaboradorRequest;
-
-  // --- Propriedades para o Dropdown ---
   public listaInstituicoes: Instituicao[] = [];
   public listaColaboradores: Colaborador[] = [];
 
-  // --- Propriedades de Feedback ---
+  public isModalAberto: boolean = false;
+  public idColaboradorEmEdicao: number | null = null;
+
+  // *** Variável para controlar a visibilidade do dropdown ***
+  public loggedInUserRole: string | null = null;
+
+  // --- Feedback ---
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
-
-  // *** ADICIONAR ESTA PROPRIEDADE ***
-  public isModalAberto: boolean = false;
-
-  // *** 2. ADICIONAR ESTADO DE EDIÇÃO ***
-  public idColaboradorEmEdicao: number | null = null;
   public feedbackModal: string | null = null;
   public isErrorModal: boolean = false;
 
-  constructor(
-    private colaboradorService: ColaboradorService,
-    private instituicaoService: InstituicaoService // Injetar o serviço
-  ) {
-    // Inicializar o formulário
+  constructor() {
     this.dadosFormulario = this.criarFormularioVazio();
+    // Ler o cargo do utilizador logado para saber se mostramos o dropdown
+    this.loggedInUserRole = this.authService.getUserRole();
   }
 
   ngOnInit(): void {
-    this.carregarInstituicoes();
-    this.carregarColaboradores(); // *** CORREÇÃO: ADICIONAR ESTA LINHA ***
+    // Se for GestorMaster, precisa da lista de instituições para o dropdown
+    if (this.loggedInUserRole === 'GestorMaster') {
+      this.carregarInstituicoes();
+    }
+    this.carregarColaboradores();
   }
 
-  /**
-   * Busca as instituições ativas para preencher o dropdown
-   */
   carregarInstituicoes(): void {
     this.instituicaoService.getInstituicoes().subscribe({
       next: (data) => {
-        // Filtramos para mostrar apenas instituições ATIVAS no dropdown
         this.listaInstituicoes = data.filter(inst => inst.isAtiva);
       },
       error: (err) => {
@@ -60,18 +61,13 @@ export class GestaoColaboradores implements OnInit {
     });
   }
 
-  /**
-   * *** NOVO MÉTODO: Busca os colaboradores para a tabela ***
-   */
   carregarColaboradores(): void {
     this.colaboradorService.getColaboradores().subscribe({
       next: (data) => {
         this.listaColaboradores = data;
       },
       error: (err) => {
-        // Não mostramos um erro fatal aqui, apenas na consola
         console.error('Erro ao carregar colaboradores:', err);
-        this.mostrarFeedback('Erro ao carregar a lista de colaboradores.', true); // *** MELHORIA: Mostrar feedback de erro ***
       }
     });
   }
@@ -80,35 +76,49 @@ export class GestaoColaboradores implements OnInit {
    * Chamado ao submeter o formulário (CRIAR ou ATUALIZAR)
    */
   onSubmit(): void {
-    this.limparFeedback(true); // Limpa só o feedback do modal
+    this.limparFeedback(true);
+
+    // *** CORREÇÃO: Removemos a lógica de validação de "GestorRH" ***
+    // A lógica aqui é simples: enviamos os dados.
+    // O backend é que decide o InstituicaoId se este vier vazio.
 
     if (this.idColaboradorEmEdicao) {
-      // --- FLUXO DE ATUALIZAÇÃO ---
+      // Atualizar
       this.colaboradorService.atualizarColaborador(this.idColaboradorEmEdicao, this.dadosFormulario).subscribe({
         next: (response) => {
-          this.mostrarFeedback(response.message || 'Colaborador atualizado com sucesso!', false); // Feedback na página
+          this.mostrarFeedback(response.message || 'Colaborador atualizado com sucesso!', false);
           this.carregarColaboradores();
           this.fecharModal();
         },
         error: (err) => {
           const msg = err.error?.message || 'Erro ao atualizar colaborador.';
-          this.mostrarFeedback(msg, true, true); // Feedback DENTRO do modal
+          this.mostrarFeedback(msg, true, true);
         }
       });
     } else {
-      // --- FLUXO DE CRIAÇÃO ---
+      // Criar
       this.colaboradorService.criarColaborador(this.dadosFormulario).subscribe({
         next: (response) => {
-          this.mostrarFeedback(response.message || 'Colaborador criado com sucesso!', false); // Feedback na página
+          this.mostrarFeedback(response.message || 'Colaborador criado com sucesso!', false);
           this.carregarColaboradores();
           this.fecharModal();
         },
         error: (err) => {
           const msg = err.error?.message || 'Erro ao criar colaborador.';
-          this.mostrarFeedback(msg, true, true); // Feedback DENTRO do modal
+          this.mostrarFeedback(msg, true, true);
         }
       });
     }
+  }
+
+  /**
+   * Abre o modal para criar um NOVO colaborador
+   */
+  public abrirModalNovo(): void {
+    this.idColaboradorEmEdicao = null; // Garante que não está em modo de edição
+    this.dadosFormulario = this.criarFormularioVazio();
+    this.limparFeedback(true);
+    this.isModalAberto = true;
   }
 
   /**
@@ -147,6 +157,25 @@ export class GestaoColaboradores implements OnInit {
   }
 
   /**
+   * Pede confirmação e elimina um colaborador
+   */
+  public selecionarParaDeletar(colaborador: Colaborador): void {
+    if (!confirm(`Tem a certeza que deseja eliminar "${colaborador.nomeCompleto}"? Esta ação é irreversível.`)) {
+      return;
+    }
+    this.colaboradorService.deletarColaborador(colaborador.id).subscribe({
+      next: (response) => {
+        this.mostrarFeedback(response.message || 'Colaborador eliminado com sucesso.', false);
+        this.carregarColaboradores(); // Recarrega a lista
+      },
+      error: (err) => {
+        const msg = err.error?.message || 'Erro ao eliminar colaborador.';
+        this.mostrarFeedback(msg, true);
+      }
+    });
+  }
+
+  /**
    * *** MÉTODO SUBSTITUÍDO ***
    * Pede confirmação e Desativa/Reativa um colaborador
    */
@@ -169,35 +198,6 @@ export class GestaoColaboradores implements OnInit {
         this.mostrarFeedback(msg, true);
       }
     });
-  }
-
-  /**
-   * Pede confirmação e elimina um colaborador
-   */
-  public selecionarParaDeletar(colaborador: Colaborador): void {
-    if (!confirm(`Tem a certeza que deseja eliminar "${colaborador.nomeCompleto}"? Esta ação é irreversível.`)) {
-      return;
-    }
-    this.colaboradorService.deletarColaborador(colaborador.id).subscribe({
-      next: (response) => {
-        this.mostrarFeedback(response.message || 'Colaborador eliminado com sucesso.', false);
-        this.carregarColaboradores(); // Recarrega a lista
-      },
-      error: (err) => {
-        const msg = err.error?.message || 'Erro ao eliminar colaborador.';
-        this.mostrarFeedback(msg, true);
-      }
-    });
-  }
-
-  /**
-   * Abre o modal para criar um NOVO colaborador
-   */
-  public abrirModalNovo(): void {
-    this.idColaboradorEmEdicao = null; // Garante que não está em modo de edição
-    this.dadosFormulario = this.criarFormularioVazio();
-    this.limparFeedback(true);
-    this.isModalAberto = true;
   }
 
   /**
@@ -224,7 +224,7 @@ export class GestaoColaboradores implements OnInit {
       salarioBase: null,
       departamento: '',
       localizacao: '',
-      instituicaoId: '' // Começa vazio
+      instituicaoId: '', // Começa vazio
     };
   }
 

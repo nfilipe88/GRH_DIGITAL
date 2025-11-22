@@ -1,6 +1,7 @@
 // Em HRManager.WebAPI/Services/TenantService.cs
 
 using HRManager.Application.Interfaces;
+using System.Security.Claims;
 
 public class TenantService : ITenantService
 {
@@ -26,4 +27,26 @@ public class TenantService : ITenantService
     }
 
     public bool IsMasterTenant => _httpContextAccessor.HttpContext?.User.IsInRole("GestorMaster") ?? false;
+
+    // 2. Implementar o método da interface
+    public Guid? GetTenantId()
+    {
+        // Obter o "Claim" (informação) "InstituicaoId" do token do utilizador logado
+        var tenantIdClaim = _httpContextAccessor.HttpContext?.User?
+            .FindFirstValue("InstituicaoId");
+
+        if (string.IsNullOrEmpty(tenantIdClaim))
+        {
+            // Utilizador é um GestorMaster ou o claim não existe
+            return null;
+        }
+
+        if (Guid.TryParse(tenantIdClaim, out Guid tenantId))
+        {
+            // Encontrámos o ID do GestorRH
+            return tenantId;
+        }
+
+        return null;
+    }
 }

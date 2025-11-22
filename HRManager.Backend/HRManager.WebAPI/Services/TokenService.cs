@@ -1,5 +1,5 @@
-﻿using HRManager.WebAPI.Domain.Interfaces;
-using HRManager.WebAPI.Models;
+﻿using HRManager.WebAPI.Models;
+using HRManager.WebAPI.Domain.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -32,6 +32,15 @@ namespace HRManager.WebAPI.Services
                 // Este é o "Claim" de Cargo (Role), crucial para a Autorização
                 new Claim(ClaimTypes.Role, user.Role)
             };
+
+            // --- INÍCIO DA NOSSA ALTERAÇÃO ---
+            // Adiciona a InstituicaoId ao token, se ela existir (para GestoresRH)
+            if (user.InstituicaoId.HasValue)
+            {
+                // "InstituicaoId" é o nome da nossa claim personalizada
+                claims.Add(new Claim("InstituicaoId", user.InstituicaoId.Value.ToString()));
+            }
+            // --- FIM DA NOSSA ALTERAÇÃO ---
 
             // 3. Criar as credenciais de assinatura
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
