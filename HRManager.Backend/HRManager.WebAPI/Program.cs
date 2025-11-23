@@ -39,6 +39,8 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 {
     // Esta é a correção: Ignora os ciclos de referência ao converter para JSON
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    // 2. ADICIONAR ESTA LINHA: Converte Enums de/para Texto (ex: "Ferias" <-> 0)
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 builder.Services.AddDbContext<HRManagerDbContext>(options =>

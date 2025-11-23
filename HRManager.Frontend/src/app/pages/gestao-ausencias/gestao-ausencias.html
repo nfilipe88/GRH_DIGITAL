@@ -1,0 +1,107 @@
+<div class="container mx-auto p-8">
+
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">Gestão de Ausências</h1>
+
+  @if (feedbackMessage) {
+    <div [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+         class="p-4 rounded mb-6 shadow-sm">
+      {{ feedbackMessage }}
+    </div>
+  }
+
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Colaborador</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Período</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dias</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          @for (item of listaAusencias; track item.id) {
+            <tr [ngClass]="{'bg-yellow-50': item.estado === 'Pendente'}"> <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                {{ item.nomeColaborador }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ item.tipo }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ item.dataInicio | date:'dd/MM' }} a {{ item.dataFim | date:'dd/MM/yyyy' }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ item.diasTotal }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span [ngClass]="{
+                  'bg-yellow-100 text-yellow-800': item.estado === 'Pendente',
+                  'bg-green-100 text-green-800': item.estado === 'Aprovada',
+                  'bg-red-100 text-red-800': item.estado === 'Rejeitada'
+                }" class="px-2 py-1 rounded-full text-xs font-semibold">
+                  {{ item.estado }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                @if (item.estado === 'Pendente') {
+                  <div class="flex justify-end gap-2">
+                    <button (click)="aprovar(item)"
+                            class="text-green-600 hover:text-green-900 font-bold"
+                            title="Aprovar">
+                      ✓
+                    </button>
+                    <button (click)="abrirModalRejeicao(item)"
+                            class="text-red-600 hover:text-red-900 font-bold"
+                            title="Rejeitar">
+                      ✕
+                    </button>
+                  </div>
+                } @else {
+                  <span class="text-gray-400 text-xs">-</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="text-center py-8 text-gray-500">
+                Não há solicitações de ausência registadas.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  @if (isModalRejeicaoAberto) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" (click)="fecharModal()"></div>
+
+      <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-md">
+        <h2 class="text-lg font-bold mb-2 text-red-600">Rejeitar Solicitação</h2>
+        <p class="text-sm text-gray-600 mb-4">Por favor, indique o motivo da rejeição para notificar o colaborador.</p>
+
+        <textarea [(ngModel)]="motivoRejeicao"
+                  rows="3"
+                  class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                  placeholder="Ex: Período solicitado coincide com pico de trabalho..."></textarea>
+
+        <div class="flex justify-end gap-3 mt-4">
+          <button (click)="fecharModal()"
+                  class="px-4 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
+            Cancelar
+          </button>
+          <button (click)="confirmarRejeicao()"
+                  class="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700">
+            Confirmar Rejeição
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

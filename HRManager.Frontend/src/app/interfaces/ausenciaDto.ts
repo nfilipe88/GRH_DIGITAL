@@ -1,0 +1,11 @@
+// O que recebemos na lista
+export interface AusenciaDto {
+  id: number;
+  nomeColaborador: string;
+  tipo: string; // "Ferias", "Doenca", etc.
+  dataInicio: string;
+  dataFim: string;
+  diasTotal: number;
+  estado: string; // "Pendente", "Aprovada", "Rejeitada"
+  dataSolicitacao: string;
+}

@@ -1,0 +1,103 @@
+<div class="container mx-auto p-8">
+
+  @if (feedbackMessage) {
+    <div [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+         class="p-4 rounded mb-4">
+      {{ feedbackMessage }}
+    </div>
+  }
+
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">Minhas Ausências</h2>
+      <button (click)="abrirModal()"
+              class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+        Nova Solicitação
+      </button>
+    </div>
+
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datas</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duração</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        @for (item of listaAusencias; track item.id) {
+          <tr>
+            <td class="px-6 py-4">{{ item.tipo }}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {{ item.dataInicio | date:'dd/MM/yyyy' }} a {{ item.dataFim | date:'dd/MM/yyyy' }}
+            </td>
+            <td class="px-6 py-4">{{ item.diasTotal }} dias</td>
+            <td class="px-6 py-4">
+              <span [ngClass]="{
+                'bg-yellow-100 text-yellow-800': item.estado === 'Pendente',
+                'bg-green-100 text-green-800': item.estado === 'Aprovada',
+                'bg-red-100 text-red-800': item.estado === 'Rejeitada'
+              }" class="px-2 py-1 rounded-full text-xs font-semibold">
+                {{ item.estado }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="text-center py-4 text-gray-500">Sem histórico.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (isModalAberto) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" (click)="fecharModal()"></div>
+
+      <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Solicitar Ausência</h2>
+
+        @if (feedbackModal) {
+          <div class="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded">
+            {{ feedbackModal }}
+          </div>
+        }
+
+        <form (ngSubmit)="onSubmit()" #form="ngForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium">Tipo de Ausência</label>
+            <select [(ngModel)]="dadosFormulario.tipo" name="tipo" class="w-full mt-1 p-2 border rounded">
+              <option value="Ferias">Férias</option>
+              <option value="Doenca">Doença</option>
+              <option value="Justificada">Justificada</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium">Início</label>
+              <input type="date" [(ngModel)]="dadosFormulario.dataInicio" name="inicio" required class="w-full mt-1 p-2 border rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Fim</label>
+              <input type="date" [(ngModel)]="dadosFormulario.dataFim" name="fim" required class="w-full mt-1 p-2 border rounded">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium">Motivo (Opcional)</label>
+            <textarea [(ngModel)]="dadosFormulario.motivo" name="motivo" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+          </div>
+
+          <div class="flex justify-end gap-2 mt-4">
+            <button type="button" (click)="fecharModal()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
+            <button type="submit" [disabled]="!form.valid" class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50">Submeter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
