@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { AusenciaDto } from '../interfaces/ausenciaDto';
 import { ResponderAusenciaRequest } from '../interfaces/responderAusenciaRequest';
 import { CriarAusenciaRequest } from '../interfaces/criarAusenciaRequest';
+import { AusenciaSaldoDto } from '../interfaces/ausenciaSaldoDto';
 
 @Injectable({
   providedIn: 'root',
@@ -31,5 +32,10 @@ export class AusenciaService {
    */
   public responderAusencia(id: number, resposta: ResponderAusenciaRequest): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}/responder`, resposta);
+  }
+
+  // *** 2. MÉTODO Vaidar dias de saldo para ferias***
+  public getSaldo(): Observable<AusenciaSaldoDto> {
+    return this.http.get<AusenciaSaldoDto>(`${this.apiUrl}/saldo`);
   }
 }

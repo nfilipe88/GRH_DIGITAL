@@ -4,6 +4,7 @@ import { CriarAusenciaRequest } from '../../interfaces/criarAusenciaRequest';
 import { AusenciaService } from '../../services/ausencia.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AusenciaSaldoDto } from '../../interfaces/ausenciaSaldoDto';
 
 @Component({
   selector: 'app-minhas-ausencias',
@@ -26,12 +27,16 @@ export class MinhasAusencias implements OnInit {
   public feedbackModal: string | null = null;
   public isErrorModal: boolean = false;
 
+  // *** 1. PROPRIEDADE DE SALDO ***
+  public saldoInfo: AusenciaSaldoDto | null = null;
+
   constructor() {
     this.dadosFormulario = this.criarFormularioVazio();
   }
 
   ngOnInit(): void {
     this.carregarAusencias();
+    this.carregarSaldo();
   }
 
   carregarAusencias(): void {
@@ -43,6 +48,14 @@ export class MinhasAusencias implements OnInit {
         console.error(err);
         this.mostrarFeedback('Erro ao carregar histórico.', true);
       }
+    });
+  }
+
+  // *** 3. NOVO MÉTODO ***
+  carregarSaldo(): void {
+    this.ausenciaService.getSaldo().subscribe({
+      next: (data) => this.saldoInfo = data,
+      error: (err) => console.error('Erro ao carregar saldo', err)
     });
   }
 
@@ -59,6 +72,7 @@ export class MinhasAusencias implements OnInit {
       next: (res) => {
         this.mostrarFeedback('Pedido submetido com sucesso!', false);
         this.carregarAusencias();
+        this.carregarSaldo(); // *** 4. Atualizar saldo após novo pedido ***
         this.fecharModal();
       },
       error: (err) => {

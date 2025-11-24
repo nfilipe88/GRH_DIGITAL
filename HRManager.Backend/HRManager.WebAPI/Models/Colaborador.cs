@@ -45,6 +45,7 @@ namespace HRManager.WebAPI.Models
 
         [MaxLength(100)]
         public string Localizacao { get; set; }
+        public int SaldoFerias { get; set; } = 22; // Padrão de 22 dias úteis
         // Define se o colaborador está ativo ou inativo (Soft Delete)
         public bool IsAtivo { get; set; } = true;
         // (Vamos omitir o Gestor Hierárquico no MVP para simplificar)
