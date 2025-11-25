@@ -84,7 +84,7 @@ builder.Services.AddAuthentication(options =>
 // Adicionar o TenantService como Scoped (para cada pedido)
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-
+builder.Services.AddScoped<IEmailService, EmailService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -99,6 +99,8 @@ app.UseHttpsRedirection();
 
 app.UseCors(AllowAngularOrigin);
 // Adicionar o middleware de Autenticação e Autorização
+// *** ADICIONE ESTA LINHA ***
+app.UseStaticFiles(); // Permite aceder à pasta wwwroot
 app.UseAuthentication();
 app.UseAuthorization();
 

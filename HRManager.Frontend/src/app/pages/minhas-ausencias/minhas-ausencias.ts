@@ -13,6 +13,9 @@ import { AusenciaSaldoDto } from '../../interfaces/ausenciaSaldoDto';
   styleUrl: './minhas-ausencias.css',
 })
 export class MinhasAusencias implements OnInit {
+  // Adicione esta constante ou propriedade com o URL base da sua API
+  // (Idealmente viria do environment, mas para agora hardcoded serve)
+  private readonly API_BASE_URL = 'https://localhost:7234';
 
   private ausenciaService = inject(AusenciaService);
 
@@ -29,6 +32,9 @@ export class MinhasAusencias implements OnInit {
 
   // *** 1. PROPRIEDADE DE SALDO ***
   public saldoInfo: AusenciaSaldoDto | null = null;
+
+  // Variável para guardar o ficheiro selecionado temporariamente
+  public ficheiroSelecionado: File | null = null;
 
   constructor() {
     this.dadosFormulario = this.criarFormularioVazio();
@@ -59,6 +65,14 @@ export class MinhasAusencias implements OnInit {
     });
   }
 
+  // Método disparado quando o utilizador escolhe um ficheiro
+  onFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      this.ficheiroSelecionado = file;
+    }
+  }
+
   onSubmit(): void {
     this.limparFeedback(true);
 
@@ -66,6 +80,10 @@ export class MinhasAusencias implements OnInit {
     if (this.dadosFormulario.dataInicio > this.dadosFormulario.dataFim) {
       this.mostrarFeedback('A data de fim deve ser superior à de início.', true, true);
       return;
+    }
+    // Adicionar o ficheiro ao objeto antes de enviar
+    if (this.ficheiroSelecionado) {
+      this.dadosFormulario.documento = this.ficheiroSelecionado;
     }
 
     this.ausenciaService.solicitarAusencia(this.dadosFormulario).subscribe({
@@ -91,6 +109,7 @@ export class MinhasAusencias implements OnInit {
 
   fecharModal(): void {
     this.isModalAberto = false;
+    this.ficheiroSelecionado = null; // Limpar o ficheiro selecionado ao fechar
   }
 
   // --- Auxiliares ---
@@ -123,4 +142,10 @@ export class MinhasAusencias implements OnInit {
     }
   }
 
+  /**
+   * Gera o link completo para o documento
+   */
+  getDocumentoUrl(caminho: string): string {
+    return `${this.API_BASE_URL}/${caminho}`;
+  }
 }

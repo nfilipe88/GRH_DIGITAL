@@ -16,5 +16,8 @@ namespace HRManager.WebAPI.DTOs
 
         [MaxLength(500)]
         public string? Motivo { get; set; }
+
+        // *** ADICIONE ESTA LINHA ***
+        public IFormFile? Documento { get; set; }
     }
 }

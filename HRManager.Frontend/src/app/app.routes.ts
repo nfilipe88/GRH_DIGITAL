@@ -9,6 +9,7 @@ import { AdminLayout } from './layout/admin-layout/admin-layout';
 import { Login } from '../core/auth/login/login';
 import { MinhasAusencias } from './pages/minhas-ausencias/minhas-ausencias';
 import { GestaoAusencias } from './pages/gestao-ausencias/gestao-ausencias';
+import { GestaoCalendario } from './pages/gestao-calendario/gestao-calendario';
 
 export const routes: Routes = [
   // 2. Rota pública de Login.
@@ -36,8 +37,9 @@ export const routes: Routes = [
       { path: 'colaboradores', component: GestaoColaboradores },
       { path: 'utilizadores', component: GestaoUtilizadores },
       { path: 'minhas-ausencias', component: MinhasAusencias },
-      { path: 'gestao-ausencias', component: GestaoAusencias }
-    ]
+      { path: 'gestao-ausencias', component: GestaoAusencias },
+      { path: 'gestao-calendario', component: GestaoCalendario},
+    ],
   },
 
   // Rota "catch-all" para redirecionar para o login ou dashboard

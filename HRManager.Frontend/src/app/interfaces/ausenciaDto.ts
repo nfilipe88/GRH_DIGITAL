@@ -8,4 +8,5 @@ export interface AusenciaDto {
   diasTotal: number;
   estado: string; // "Pendente", "Aprovada", "Rejeitada"
   dataSolicitacao: string;
+  caminhoDocumento?: string; // URL ou caminho para o documento carregado, se existir
 }

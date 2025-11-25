@@ -11,9 +11,11 @@ import { CommonModule } from '@angular/common';
   styleUrl: './gestao-ausencias.css',
 })
 export class GestaoAusencias implements OnInit {
+  // Adicione esta constante ou propriedade com o URL base da sua API
+  // (Idealmente viria do environment, mas para agora hardcoded serve)
+  private readonly API_BASE_URL = 'https://localhost:7234';
 
   private ausenciaService = inject(AusenciaService);
-
   public listaAusencias: AusenciaDto[] = [];
 
   // --- Controlo do Modal de Rejeição ---
@@ -105,4 +107,10 @@ export class GestaoAusencias implements OnInit {
     setTimeout(() => this.feedbackMessage = null, 5000);
   }
 
+  /**
+   * Gera o link completo para o documento
+   */
+  getDocumentoUrl(caminho: string): string {
+    return `${this.API_BASE_URL}/${caminho}`;
+  }
 }

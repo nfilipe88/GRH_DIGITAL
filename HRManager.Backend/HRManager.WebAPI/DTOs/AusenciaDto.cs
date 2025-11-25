@@ -10,5 +10,7 @@
         public int DiasTotal { get; set; } // Calculado
         public string Estado { get; set; } // Pendente, Aprovada...
         public DateTime DataSolicitacao { get; set; }
+        // *** CAMINHO DOS DOCUMENTOS CARREGADOS ***
+        public string? CaminhoDocumento { get; set; }
     }
 }

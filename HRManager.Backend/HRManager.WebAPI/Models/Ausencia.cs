@@ -56,5 +56,8 @@ namespace HRManager.WebAPI.Models
         public string? ComentarioGestor { get; set; } // Ex: Motivo da rejeição
 
         public DateTime? DataResposta { get; set; } // Quando foi aprovado/rejeitado
+                                                    // *** ADICIONE ESTA LINHA ***
+        [MaxLength(500)]
+        public string? CaminhoDocumento { get; set; } // Guarda o caminho relativo (ex: "uploads/doc123.pdf")
     }
 }
