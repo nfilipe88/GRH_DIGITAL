@@ -1,0 +1,76 @@
+<div class="container mx-auto p-8">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">Pedidos de Declaração</h1>
+
+  <div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Colaborador</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        @for (pedido of listaPedidos; track pedido.id) {
+          <tr [ngClass]="{'bg-blue-50': pedido.estado === 'Pendente'}">
+            <td class="px-6 py-4 font-medium">{{ pedido.nomeColaborador }}</td>
+            <td class="px-6 py-4 text-gray-600">{{ pedido.tipo }}</td>
+            <td class="px-6 py-4 text-gray-500">{{ pedido.dataSolicitacao | date:'dd/MM/yyyy' }}</td>
+            <td class="px-6 py-4">
+               <span [ngClass]="{
+                'bg-yellow-100 text-yellow-800': pedido.estado === 'Pendente',
+                'bg-green-100 text-green-800': pedido.estado === 'Concluido',
+                'bg-red-100 text-red-800': pedido.estado === 'Rejeitado'
+              }" class="px-2 py-1 rounded-full text-xs font-semibold">
+                {{ pedido.estado }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              @if (pedido.estado === 'Pendente') {
+                <div class="flex justify-end gap-2">
+                  <button (click)="abrirModalUpload(pedido)" class="text-blue-600 hover:underline text-sm font-bold">
+                    📤 Upload PDF
+                  </button>
+                  <button (click)="rejeitar(pedido)" class="text-red-600 hover:underline text-sm">
+                    Rejeitar
+                  </button>
+                </div>
+              } @else if (pedido.estado === 'Concluido' && pedido.caminhoFicheiro) {
+                  <a [href]="getDocumentoUrl(pedido.caminhoFicheiro)" target="_blank" class="text-gray-500 text-sm hover:underline">Ver PDF</a>
+              } @else {
+                <span class="text-gray-400 text-sm">Fechado</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="text-center py-4 text-gray-500">Sem pedidos pendentes.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (isModalUploadAberto) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" (click)="isModalUploadAberto = false"></div>
+      <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Emitir Declaração</h2>
+        <p class="text-sm text-gray-600 mb-4">
+            Carregue o documento PDF assinado para finalizar o pedido de
+            <strong>{{ pedidoEmAnalise?.nomeColaborador }}</strong>.
+        </p>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Ficheiro (PDF)</label>
+            <input type="file" (change)="onFileSelected($event)" accept=".pdf" class="w-full mt-1 text-sm">
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button (click)="isModalUploadAberto = false" class="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+          <button (click)="confirmarUpload()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Concluir Pedido</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

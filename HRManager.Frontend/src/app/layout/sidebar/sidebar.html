@@ -95,13 +95,55 @@
       </a>
     </li>
     <li>
-      <a routerLink="/gestao-calendario" routerLinkActive="bg-gray-700"
-        class="flex items-center px-6 py-2 mt-4 text-gray-100 hover:bg-gray-700 hover:bg-opacity-25 hover:text-white">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      <a routerLink="/gestao-calendario" routerLinkActive="active-link"
+        class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+        [ngClass]="{ 'justify-center': !isSidebarOpen }">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+          class="w-6 h-6 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round"
             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
         </svg>
-        <span class="mx-3">Calendário de Equipa</span>
+        <span *ngIf="isSidebarOpen" class="ml-3">Calendário de Equipa</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/minhas-declaracoes" routerLinkActive="active-link"
+        class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+        [ngClass]="{ 'justify-center': !isSidebarOpen }">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+          class="w-6 h-6 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span *ngIf="isSidebarOpen" class="ml-3">Minhas Declarações</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/emissao-declaracoes" routerLinkActive="active-link"
+        class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+        [ngClass]="{ 'justify-center': !isSidebarOpen }">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+          class="w-6 h-6 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span *ngIf="isSidebarOpen" class="ml-3">Gestão de Pedidos (RH)</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/perfil" routerLinkActive="active-link"
+        class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+        [ngClass]="{ 'justify-center': !isSidebarOpen }">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+          class="w-6 h-6 shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+        </svg>
+        <span *ngIf="isSidebarOpen" class="ml-3">O Meu Perfil</span>
       </a>
     </li>
   </ul>

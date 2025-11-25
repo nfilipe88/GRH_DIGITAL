@@ -1,0 +1,84 @@
+<p>minhas-declaracoes works!</p>
+<div class="container mx-auto p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Minhas Declarações</h1>
+    <button (click)="isModalAberto = true" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      Pedir Declaração
+    </button>
+  </div>
+
+  @if (feedbackMessage) {
+    <div class="bg-green-100 text-green-800 p-3 rounded mb-4">{{ feedbackMessage }}</div>
+  }
+
+  <div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Pedido</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ação</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        @for (pedido of listaPedidos; track pedido.id) {
+          <tr>
+            <td class="px-6 py-4 text-gray-900">{{ pedido.tipo }}</td>
+            <td class="px-6 py-4 text-gray-500">{{ pedido.dataSolicitacao | date:'dd/MM/yyyy' }}</td>
+            <td class="px-6 py-4">
+              <span [ngClass]="{
+                'bg-yellow-100 text-yellow-800': pedido.estado === 'Pendente',
+                'bg-green-100 text-green-800': pedido.estado === 'Concluido',
+                'bg-red-100 text-red-800': pedido.estado === 'Rejeitado'
+              }" class="px-2 py-1 rounded-full text-xs font-semibold">
+                {{ pedido.estado }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              @if (pedido.estado === 'Concluido' && pedido.caminhoFicheiro) {
+                <a [href]="getDocumentoUrl(pedido.caminhoFicheiro)" target="_blank"
+                   class="text-blue-600 hover:underline text-sm font-medium">
+                   📥 Descarregar PDF
+                </a>
+              } @else {
+                <span class="text-gray-400 text-sm">-</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="text-center py-4 text-gray-500">Sem pedidos.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (isModalAberto) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" (click)="isModalAberto = false"></div>
+      <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Nova Declaração</h2>
+        <form (ngSubmit)="onSubmit()">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Finalidade</label>
+            <select [(ngModel)]="dadosFormulario.tipo" name="tipo" class="w-full p-2 border rounded">
+              <option value="FinsBancarios">Fins Bancários</option>
+              <option value="FinsEscolares">Fins Escolares</option>
+              <option value="VistoConsular">Visto Consular</option>
+              <option value="ComprovativoVinculo">Comprovativo de Vínculo</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Observações (Opcional)</label>
+            <textarea [(ngModel)]="dadosFormulario.observacoes" name="obs" rows="2" class="w-full p-2 border rounded" placeholder="Ex: Incluir salário anual..."></textarea>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" (click)="isModalAberto = false" class="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Pedir</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

@@ -18,8 +18,11 @@ public class HRManagerDbContext : DbContext
 
     // Mapeia os nossos modelos para tabelas no PostgreSQL
     public DbSet<Ausencia> Ausencias { get; set; }
+    public DbSet<CertificacaoProfissional> CertificacoesProfissionais { get; set; }
     public DbSet<Colaborador> Colaboradores { get; set; }
+    public DbSet<HabilitacaoLiteraria> HabilitacoesLiterarias { get; set; }
     public DbSet<Instituicao> Instituicoes { get; set; }
+    public DbSet<PedidoDeclaracao> PedidosDeclaracao { get; set; }
     public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

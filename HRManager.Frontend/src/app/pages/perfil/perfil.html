@@ -1,0 +1,184 @@
+<div class="container mx-auto p-8">
+
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">O Meu Perfil Profissional</h1>
+    <p class="text-gray-600">Gestão de competências, habilitações e certificações.</p>
+  </div>
+
+  @if (feedbackMessage) {
+    <div [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+         class="p-4 rounded mb-6 shadow-sm">
+      {{ feedbackMessage }}
+    </div>
+  }
+
+  @if (perfil) {
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <div class="lg:col-span-1">
+        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+          <div class="w-24 h-24 bg-blue-100 rounded-full mx-auto flex items-center justify-center text-3xl font-bold text-blue-600 mb-4">
+            {{ perfil.nomeCompleto.charAt(0) }}
+          </div>
+          <h2 class="text-xl font-semibold text-gray-900">{{ perfil.nomeCompleto }}</h2>
+          <p class="text-sm text-gray-500">{{ perfil.cargo || 'Sem Cargo Definido' }}</p>
+          <p class="text-xs text-gray-400 mt-1">{{ perfil.email }}</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2 space-y-8">
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              🎓 Habilitações Literárias
+            </h3>
+            <button (click)="abrirModalHabilitacao()" class="text-sm text-blue-600 hover:underline font-medium">
+              + Adicionar
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            @for (hab of perfil.habilitacoes; track hab.id) {
+              <div class="flex justify-between items-start p-3 bg-gray-50 rounded border border-gray-100 hover:border-gray-300 transition">
+                <div>
+                  <p class="font-semibold text-gray-900">{{ hab.curso }} ({{ hab.grau }})</p>
+                  <p class="text-sm text-gray-600">{{ hab.instituicao }}</p>
+                  <p class="text-xs text-gray-400">Concluído em: {{ hab.dataConclusao | date:'yyyy' }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  @if (hab.caminhoDocumento) {
+                    <a [href]="getDocumentoUrl(hab.caminhoDocumento)" target="_blank" class="text-blue-600 text-sm hover:underline">Ver Diploma</a>
+                  }
+                  <button (click)="deleteHabilitacao(hab.id)" class="text-red-500 hover:text-red-700 text-sm">Remover</button>
+                </div>
+              </div>
+            } @empty {
+              <p class="text-gray-500 text-sm italic">Nenhuma habilitação registada.</p>
+            }
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              🏆 Certificações Profissionais
+            </h3>
+            <button (click)="abrirModalCertificacao()" class="text-sm text-blue-600 hover:underline font-medium">
+              + Adicionar
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            @for (cert of perfil.certificacoes; track cert.id) {
+              <div class="flex justify-between items-start p-3 bg-gray-50 rounded border border-gray-100 hover:border-gray-300 transition">
+                <div>
+                  <p class="font-semibold text-gray-900">{{ cert.nome }}</p>
+                  <p class="text-sm text-gray-600">Emitido por: {{ cert.entidade }}</p>
+                  <p class="text-xs text-gray-400">Data: {{ cert.dataEmissao | date:'MM/yyyy' }}
+                    @if(cert.dataValidade) { <span> | Válido até: {{ cert.dataValidade | date:'MM/yyyy' }}</span> }
+                  </p>
+                </div>
+                <div class="flex items-center gap-3">
+                  @if (cert.caminhoDocumento) {
+                    <a [href]="getDocumentoUrl(cert.caminhoDocumento)" target="_blank" class="text-blue-600 text-sm hover:underline">Ver Certificado</a>
+                  }
+                  <button (click)="deleteCertificacao(cert.id)" class="text-red-500 hover:text-red-700 text-sm">Remover</button>
+                </div>
+              </div>
+            } @empty {
+              <p class="text-gray-500 text-sm italic">Nenhuma certificação registada.</p>
+            }
+          </div>
+        </div>
+
+      </div>
+    </div>
+  } @else {
+    <p class="text-center mt-10">A carregar perfil...</p>
+  }
+
+  @if (isModalHabilitacaoAberto) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" (click)="isModalHabilitacaoAberto = false"></div>
+      <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Adicionar Habilitação</h2>
+        <form (ngSubmit)="submitHabilitacao()">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium">Grau Académico</label>
+              <select [(ngModel)]="formHabilitacao.grau" name="grau" class="w-full p-2 border rounded">
+                <option value="EnsinoSecundario">Ensino Secundário</option>
+                <option value="Licenciatura">Licenciatura</option>
+                <option value="Mestrado">Mestrado</option>
+                <option value="Doutoramento">Doutoramento</option>
+                <option value="PosGraduacao">Pós-Graduação</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Curso</label>
+              <input [(ngModel)]="formHabilitacao.curso" name="curso" type="text" required class="w-full p-2 border rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Instituição</label>
+              <input [(ngModel)]="formHabilitacao.instituicaoEnsino" name="inst" type="text" required class="w-full p-2 border rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Data Conclusão</label>
+              <input [(ngModel)]="formHabilitacao.dataConclusao" name="data" type="date" required class="w-full p-2 border rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Diploma (PDF/Img)</label>
+              <input type="file" (change)="onFileSelected($event)" class="w-full text-sm">
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button" (click)="isModalHabilitacaoAberto = false" class="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (isModalCertificacaoAberto) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" (click)="isModalCertificacaoAberto = false"></div>
+      <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Adicionar Certificação</h2>
+        <form (ngSubmit)="submitCertificacao()">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium">Nome da Certificação</label>
+              <input [(ngModel)]="formCertificacao.nomeCertificacao" name="nome" type="text" required class="w-full p-2 border rounded" placeholder="Ex: PMP, CCNA">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Entidade Emissora</label>
+              <input [(ngModel)]="formCertificacao.entidadeEmissora" name="entidade" type="text" required class="w-full p-2 border rounded">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-sm font-medium">Data Emissão</label>
+                <input [(ngModel)]="formCertificacao.dataEmissao" name="dEmissao" type="date" required class="w-full p-2 border rounded">
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Validade (Opcional)</label>
+                <input [(ngModel)]="formCertificacao.dataValidade" name="dValidade" type="date" class="w-full p-2 border rounded">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Comprovativo (PDF/Img)</label>
+              <input type="file" (change)="onFileSelected($event)" class="w-full text-sm">
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button" (click)="isModalCertificacaoAberto = false" class="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

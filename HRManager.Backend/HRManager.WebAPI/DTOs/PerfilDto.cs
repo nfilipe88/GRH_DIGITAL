@@ -1,0 +1,15 @@
+﻿namespace HRManager.WebAPI.DTOs
+{
+    public class PerfilDto
+    {
+        // Dados Básicos
+        public int ColaboradorId { get; set; }
+        public string NomeCompleto { get; set; }
+        public string Cargo { get; set; }
+        public string Email { get; set; }
+
+        // Listas Curriculares
+        public List<HabilitacaoDto> Habilitacoes { get; set; }
+        public List<CertificacaoDto> Certificacoes { get; set; }
+    }
+}

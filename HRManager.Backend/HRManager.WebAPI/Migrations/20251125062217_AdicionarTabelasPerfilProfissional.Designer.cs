@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HRManager.WebAPI.Migrations
 {
     [DbContext(typeof(HRManagerDbContext))]
-    partial class HRManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251125062217_AdicionarTabelasPerfilProfissional")]
+    partial class AdicionarTabelasPerfilProfissional
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -240,44 +243,6 @@ namespace HRManager.WebAPI.Migrations
                     b.ToTable("Instituicoes");
                 });
 
-            modelBuilder.Entity("HRManager.WebAPI.Models.PedidoDeclaracao", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CaminhoFicheiro")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("ColaboradorId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("DataConclusao")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("DataSolicitacao")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Estado")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Observacoes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("Tipo")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ColaboradorId");
-
-                    b.ToTable("PedidosDeclaracao");
-                });
-
             modelBuilder.Entity("HRManager.WebAPI.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -349,17 +314,6 @@ namespace HRManager.WebAPI.Migrations
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.HabilitacaoLiteraria", b =>
-                {
-                    b.HasOne("HRManager.WebAPI.Models.Colaborador", "Colaborador")
-                        .WithMany()
-                        .HasForeignKey("ColaboradorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Colaborador");
-                });
-
-            modelBuilder.Entity("HRManager.WebAPI.Models.PedidoDeclaracao", b =>
                 {
                     b.HasOne("HRManager.WebAPI.Models.Colaborador", "Colaborador")
                         .WithMany()

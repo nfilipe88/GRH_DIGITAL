@@ -10,6 +10,9 @@ import { Login } from '../core/auth/login/login';
 import { MinhasAusencias } from './pages/minhas-ausencias/minhas-ausencias';
 import { GestaoAusencias } from './pages/gestao-ausencias/gestao-ausencias';
 import { GestaoCalendario } from './pages/gestao-calendario/gestao-calendario';
+import { Perfil } from './pages/perfil/perfil';
+import { EmissaoDeclaracoes } from './pages/emissao-declaracoes/emissao-declaracoes';
+import { MinhasDeclaracoes } from './pages/minhas-declaracoes/minhas-declaracoes';
 
 export const routes: Routes = [
   // 2. Rota pública de Login.
@@ -39,6 +42,9 @@ export const routes: Routes = [
       { path: 'minhas-ausencias', component: MinhasAusencias },
       { path: 'gestao-ausencias', component: GestaoAusencias },
       { path: 'gestao-calendario', component: GestaoCalendario},
+      { path: 'perfil', component: Perfil },
+      { path: 'minhas-declaracoes', component: MinhasDeclaracoes},
+      { path: 'emissao-declaracoes', component: EmissaoDeclaracoes},
     ],
   },
 
