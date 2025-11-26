@@ -5,6 +5,7 @@ import { PerfilDto } from '../../interfaces/perfilDto';
 import { PerfilService } from '../../services/perfil.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AtualizarDadosPessoaisRequest } from '../../interfaces/atualizarDadosPessoaisRequest';
 
 @Component({
   selector: 'app-perfil',
@@ -31,6 +32,10 @@ export class Perfil implements OnInit {
   // --- Feedback ---
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
+
+  // --- Estado de Edição de Dados Pessoais ---
+  public isEditingDados = false;
+  public formDadosPessoais: AtualizarDadosPessoaisRequest = {};
 
   constructor() {
     this.formHabilitacao = this.resetHabilitacao();
@@ -108,6 +113,34 @@ export class Perfil implements OnInit {
     this.perfilService.deleteCertificacao(id).subscribe({
       next: () => this.carregarPerfil(),
       error: (err) => alert('Erro ao remover.')
+    });
+  }
+
+  // *** MÉTODOS PARA DADOS PESSOAIS ***
+
+  ativarEdicaoDados(): void {
+    if (!this.perfil) return;
+    // Copiar dados atuais para o formulário
+    this.formDadosPessoais = {
+      morada: this.perfil.morada,
+      iban: this.perfil.iban
+    };
+    this.isEditingDados = true;
+  }
+
+  cancelarEdicaoDados(): void {
+    this.isEditingDados = false;
+    this.formDadosPessoais = {};
+  }
+
+  guardarDadosPessoais(): void {
+    this.perfilService.updateDadosPessoais(this.formDadosPessoais).subscribe({
+      next: () => {
+        this.mostrarFeedback('Dados atualizados com sucesso!', false);
+        this.carregarPerfil(); // Recarrega para ver as alterações
+        this.isEditingDados = false;
+      },
+      error: (err) => this.mostrarFeedback('Erro ao atualizar dados.', true)
     });
   }
 

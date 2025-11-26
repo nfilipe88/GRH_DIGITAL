@@ -85,6 +85,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

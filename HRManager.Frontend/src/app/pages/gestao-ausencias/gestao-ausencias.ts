@@ -27,6 +27,18 @@ export class GestaoAusencias implements OnInit {
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
 
+  // --- Filtros para Relatório ---
+  public filtroMes: number;
+  public filtroAno: number;
+  public isExporting = false;
+
+  constructor() {
+      // Definir mês/ano atual como padrão
+      const hoje = new Date();
+      this.filtroMes = hoje.getMonth() + 1; // JS conta meses de 0 a 11
+      this.filtroAno = hoje.getFullYear();
+  }
+
   ngOnInit(): void {
     this.carregarAusencias();
   }
@@ -112,5 +124,31 @@ export class GestaoAusencias implements OnInit {
    */
   getDocumentoUrl(caminho: string): string {
     return `${this.API_BASE_URL}/${caminho}`;
+  }
+
+  /**
+   * Ação de Exportar
+   */
+  exportarExcel(): void {
+    this.isExporting = true;
+    this.ausenciaService.downloadRelatorioExcel(this.filtroMes, this.filtroAno).subscribe({
+      next: (blob) => {
+        // Criar um link temporário para forçar o download no browser
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Relatorio_Ausencias_${this.filtroMes}_${this.filtroAno}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        this.isExporting = false;
+        this.mostrarFeedback('Relatório gerado com sucesso.', false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.isExporting = false;
+        this.mostrarFeedback('Erro ao gerar relatório.', true);
+      }
+    });
   }
 }

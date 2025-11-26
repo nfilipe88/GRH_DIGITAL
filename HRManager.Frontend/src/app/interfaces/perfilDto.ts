@@ -6,6 +6,8 @@ export interface PerfilDto {
   nomeCompleto: string;
   cargo: string;
   email: string;
+  morada?: string;
+  iban?: string;
   habilitacoes: HabilitacaoDto[];
   certificacoes: CertificacaoDto[];
 }

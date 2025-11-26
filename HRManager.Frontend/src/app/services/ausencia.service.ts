@@ -58,4 +58,13 @@ export class AusenciaService {
   public getSaldo(): Observable<AusenciaSaldoDto> {
     return this.http.get<AusenciaSaldoDto>(`${this.apiUrl}/saldo`);
   }
+
+  /**
+   * Faz o download do relatório Excel
+   */
+  public downloadRelatorioExcel(mes: number, ano: number): Observable<Blob> {
+    // Importante: Definir responseType como 'blob' para o Angular saber que é um ficheiro
+    const url = `https://localhost:7234/api/Relatorios/ausencias?mes=${mes}&ano=${ano}`;
+    return this.http.get(url, { responseType: 'blob' });
+  }
 }

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { CriarCertificacaoRequest } from '../interfaces/criarCertificacaoRequest';
 import { CriarHabilitacaoRequest } from '../interfaces/criarHabilitacaoRequest';
 import { PerfilDto } from '../interfaces/perfilDto';
+import { AtualizarDadosPessoaisRequest } from '../interfaces/atualizarDadosPessoaisRequest';
 
 @Injectable({
   providedIn: 'root',
@@ -78,5 +79,15 @@ export class PerfilService {
    */
   public deleteCertificacao(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/certificacoes/${id}`);
+  }
+
+  /**
+   * Atualiza Morada e IBAN
+   */
+  public updateDadosPessoais(dados: AtualizarDadosPessoaisRequest, colaboradorId?: number): Observable<any> {
+    let url = `${this.apiUrl}/dados-pessoais`;
+    if (colaboradorId) url += `?colaboradorId=${colaboradorId}`;
+
+    return this.http.put(url, dados);
   }
 }

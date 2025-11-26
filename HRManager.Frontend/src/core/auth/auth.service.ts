@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { LoginResponse } from '../../core/auth/interfaces/login-response';
+import { UserDetails } from '../../app/interfaces/userDetailsDto';
 
 // *** 1. INTERFACE PARA O PEDIDO DE REGISTO ***
 export interface RegisterRequest {
@@ -80,6 +81,14 @@ export class AuthService {
    */
   public register(data: RegisterRequest): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/register`, data);
+  }
+
+  // *** /GETME MÉTODO ***
+  /**
+   * Obtém os detalhes do utilizador logado a partir da API
+   */
+  public getUserDetails(): Observable<UserDetails> {
+    return this.http.get<UserDetails>(`${this.apiUrl}/me`);
   }
 
   // *** 2. NOVO MÉTODO ***

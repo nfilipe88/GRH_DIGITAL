@@ -19,12 +19,14 @@ namespace HRManager.WebAPI.Controllers
         private readonly HRManagerDbContext _context;
         private readonly ITenantService _tenantService;
         private readonly IEmailService _emailService;
+        private readonly INotificationService _notificationService;
 
-        public AusenciasController(HRManagerDbContext context, ITenantService tenantService, IEmailService emailService)
+        public AusenciasController(HRManagerDbContext context, ITenantService tenantService, IEmailService emailService, INotificationService notificationService)
         {
             _context = context;
             _tenantService = tenantService;
             _emailService = emailService;
+            _notificationService = notificationService;
         }
 
         // ---
@@ -209,6 +211,14 @@ namespace HRManager.WebAPI.Controllers
             _context.Ausencias.Add(novaAusencia);
             await _context.SaveChangesAsync();
 
+            // *** DISPARAR NOTIFICAÇÃO PARA OS GESTORES ***
+            await _notificationService.NotifyManagersAsync(
+                colaborador.InstituicaoId,
+                "Novo Pedido de Ausência",
+                $"{colaborador.NomeCompleto} solicitou {request.Tipo} de {request.DataInicio:dd/MM} a {request.DataFim:dd/MM}.",
+                "/gestao-ausencias" // Link para o gestor clicar
+            );
+
             return StatusCode(201, new { message = "Pedido de ausência submetido com sucesso." });
         }
 
@@ -275,6 +285,15 @@ namespace HRManager.WebAPI.Controllers
             ausencia.DataResposta = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            // *** DISPARAR NOTIFICAÇÃO PARA O COLABORADOR ***
+            string resultado = request.Aprovado ? "Aprovado ✅" : "Rejeitado ❌";
+            await _notificationService.NotifyUserByEmailAsync(
+                ausencia.Colaborador.EmailPessoal,
+                $"Pedido {resultado}",
+                $"O seu pedido de ausência foi {resultado.ToLower()}.",
+                "/minhas-ausencias"
+            );
 
             // *** 3. ENVIAR NOTIFICAÇÃO POR EMAIL ***
             try

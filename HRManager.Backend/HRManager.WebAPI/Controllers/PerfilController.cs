@@ -54,6 +54,9 @@ namespace HRManager.WebAPI.Controllers
                 NomeCompleto = colaborador.NomeCompleto,
                 Cargo = colaborador.Cargo,
                 Email = colaborador.EmailPessoal,
+                // *** MAPEAMENTO NOVO ***
+                Morada = colaborador.Morada,
+                IBAN = colaborador.IBAN,
 
                 Habilitacoes = habilitacoes.Select(h => new HabilitacaoDto
                 {
@@ -226,6 +229,25 @@ namespace HRManager.WebAPI.Controllers
             }
 
             return $"uploads/{subPasta}/{nomeUnico}";
+        }
+
+        // ---
+        // PUT: Atualizar Dados Pessoais (Morada, IBAN)
+        // ---
+        [HttpPut("dados-pessoais")]
+        public async Task<IActionResult> AtualizarDadosPessoais([FromQuery] int? colaboradorId, [FromBody] AtualizarDadosPessoaisRequest request)
+        {
+            var colaborador = await GetColaboradorAlvo(colaboradorId);
+            if (colaborador == null) return Unauthorized(new { message = "Sem permissão." });
+
+            // Atualizar apenas os campos permitidos
+            colaborador.Morada = request.Morada;
+            colaborador.IBAN = request.IBAN;
+
+            _context.Colaboradores.Update(colaborador);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Dados pessoais atualizados com sucesso." });
         }
     }
 }

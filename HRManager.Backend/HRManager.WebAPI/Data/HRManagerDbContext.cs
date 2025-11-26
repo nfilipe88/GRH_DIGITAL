@@ -22,6 +22,7 @@ public class HRManagerDbContext : DbContext
     public DbSet<Colaborador> Colaboradores { get; set; }
     public DbSet<HabilitacaoLiteraria> HabilitacoesLiterarias { get; set; }
     public DbSet<Instituicao> Instituicoes { get; set; }
+    public DbSet<Notificacao> Notificacoes { get; set; }
     public DbSet<PedidoDeclaracao> PedidosDeclaracao { get; set; }
     public DbSet<User> Users { get; set; }
 

@@ -4,6 +4,7 @@ using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -20,6 +21,40 @@ namespace HRManager.WebAPI.Controllers
         {
             _context = context;
             _tokenService = tokenService;
+        }
+
+        // ---
+        // GET: Obter dados do utilizador atual (Me)
+        // ---
+        [HttpGet("me")]
+        [Authorize] // <-- Exige token válido
+        public async Task<IActionResult> GetMe()
+        {
+            // 1. Ler o ID do utilizador a partir do Token (Claim: NameIdentifier)
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+
+            int userId = int.Parse(userIdStr);
+
+            // 2. Buscar dados na BD
+            var userDto = await _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => new UserDetailsDto
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    Role = u.Role,
+                    // Buscar o nome da instituição (subquery simples)
+                    NomeInstituicao = _context.Instituicoes
+                                        .Where(i => i.Id == u.InstituicaoId)
+                                        .Select(i => i.Nome)
+                                        .FirstOrDefault()
+                })
+                .FirstOrDefaultAsync();
+
+            if (userDto == null) return NotFound(new { message = "Utilizador não encontrado." });
+
+            return Ok(userDto);
         }
 
         [HttpPost("register")]

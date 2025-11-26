@@ -16,13 +16,67 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
       <div class="lg:col-span-1">
-        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+        <div class="bg-white p-6 rounded-lg shadow-md text-center sticky top-8">
+
           <div class="w-24 h-24 bg-blue-100 rounded-full mx-auto flex items-center justify-center text-3xl font-bold text-blue-600 mb-4">
             {{ perfil.nomeCompleto.charAt(0) }}
           </div>
+
           <h2 class="text-xl font-semibold text-gray-900">{{ perfil.nomeCompleto }}</h2>
-          <p class="text-sm text-gray-500">{{ perfil.cargo || 'Sem Cargo Definido' }}</p>
-          <p class="text-xs text-gray-400 mt-1">{{ perfil.email }}</p>
+          <p class="text-sm text-gray-500 font-medium mb-4">{{ perfil.cargo || 'Sem Cargo Definido' }}</p>
+
+          @if (!isEditingDados) {
+            <div class="text-left space-y-3 border-t pt-4">
+              <div>
+                <span class="text-xs text-gray-400 uppercase block">Email</span>
+                <span class="text-sm text-gray-800">{{ perfil.email }}</span>
+              </div>
+              <div>
+                <span class="text-xs text-gray-400 uppercase block">Morada</span>
+                <span class="text-sm text-gray-800">{{ perfil.morada || '-' }}</span>
+              </div>
+              <div>
+                <span class="text-xs text-gray-400 uppercase block">IBAN</span>
+                <span class="text-sm text-gray-800 font-mono">{{ perfil.iban || '-' }}</span>
+              </div>
+            </div>
+
+            <button (click)="ativarEdicaoDados()" class="mt-6 w-full py-2 px-4 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-sm font-medium">
+              Editar Dados
+            </button>
+          }
+
+          @else {
+            <form (ngSubmit)="guardarDadosPessoais()" class="text-left space-y-3 border-t pt-4">
+              <div>
+                <span class="text-xs text-gray-400 uppercase block">Email</span>
+                <span class="text-sm text-gray-500">{{ perfil.email }}</span>
+              </div>
+
+              <div>
+                <label class="text-xs text-gray-600 uppercase block font-semibold">Morada</label>
+                <textarea [(ngModel)]="formDadosPessoais.morada" name="morada" rows="2"
+                          class="w-full mt-1 p-2 text-sm border rounded focus:ring-blue-500 focus:border-blue-500"></textarea>
+              </div>
+
+              <div>
+                <label class="text-xs text-gray-600 uppercase block font-semibold">IBAN</label>
+                <input [(ngModel)]="formDadosPessoais.iban" name="iban" type="text"
+                       class="w-full mt-1 p-2 text-sm border rounded font-mono focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="AO06...">
+              </div>
+
+              <div class="flex gap-2 mt-4">
+                <button type="button" (click)="cancelarEdicaoDados()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded text-xs font-medium">
+                  Cancelar
+                </button>
+                <button type="submit" class="flex-1 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">
+                  Guardar
+                </button>
+              </div>
+            </form>
+          }
+
         </div>
       </div>
 

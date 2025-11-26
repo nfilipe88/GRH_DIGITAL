@@ -45,6 +45,13 @@ namespace HRManager.WebAPI.Models
 
         [MaxLength(100)]
         public string Localizacao { get; set; }
+        // *** ADICIONE ESTAS LINHAS ***
+        [MaxLength(200)]
+        public string? Morada { get; set; }
+
+        [MaxLength(34)] // Tamanho padrão do IBAN
+        public string? IBAN { get; set; }
+        // ******************************
         public int SaldoFerias { get; set; } = 22; // Padrão de 22 dias úteis
         // Define se o colaborador está ativo ou inativo (Soft Delete)
         public bool IsAtivo { get; set; } = true;
