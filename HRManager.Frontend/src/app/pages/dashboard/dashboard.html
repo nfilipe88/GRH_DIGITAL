@@ -1,40 +1,119 @@
-<div *ngIf="stats$ | async as stats; else loading">
+<div class="p-6 space-y-6">
+
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Dashboard</h1>
+      <p class="text-slate-500 dark:text-slate-400">Visão geral da sua organização</p>
+    </div>
+    <button routerLink="/gestao-ausencias"
+      class="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+      <span>+</span> Nova Solicitação
+    </button>
+  </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-    <div class="bg-white p-6 rounded-lg shadow-lg">
-      <h3 class="text-sm font-medium text-gray-500">Total de Instituições</h3>
-      <p class="mt-2 text-3xl font-bold text-gray-900">
-        {{ stats.totalInstituicoes }}
-      </p>
+    <div
+      class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center space-x-4">
+      <div class="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Colaboradores</p>
+        <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ stats?.totalColaboradores || 0 }}</p>
+      </div>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-lg">
-      <h3 class="text-sm font-medium text-gray-500">Total de Colaboradores</h3>
-      <p class="mt-2 text-3xl font-bold text-gray-900">
-        {{ stats.totalColaboradores }}
-      </p>
+    <div
+      class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center space-x-4">
+      <div class="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Ativos</p>
+        <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ stats?.totalColaboradoresAtivos || 0 }}</p>
+      </div>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-lg">
-      <h3 class="text-sm font-medium text-gray-500">Colaboradores Ativos</h3>
-      <p class="mt-2 text-3xl font-bold text-gray-900">
-        {{ stats.totalColaboradoresAtivos }}
-      </p>
+    <div
+      class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center space-x-4">
+      <div class="p-3 rounded-full"
+        [ngClass]="(stats?.ausenciasPendentes || 0) > 0 ? 'bg-red-50 text-red-600 animate-pulse' : 'bg-slate-50 text-slate-400'">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pedidos Pendentes</p>
+        <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ stats?.ausenciasPendentes || 0 }}</p>
+      </div>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-lg">
-      <h3 class="text-sm font-medium text-gray-500">Total de Utilizadores</h3>
-      <p class="mt-2 text-3xl font-bold text-gray-900">
-        {{ stats.totalUtilizadores }}
-      </p>
+    <div
+      class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center space-x-4">
+      <div class="p-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Novas Admissões</p>
+        <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ stats?.novasAdmissoesMes || 0 }}</p>
+      </div>
     </div>
-
   </div>
-</div>
 
-<ng-template #loading>
-  <div classa="flex justify-center items-center p-10">
-    <p class="text-gray-600">A carregar estatísticas...</p>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div
+      class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-6">Distribuição por Departamento</h3>
+
+      <div class="h-80 w-full" *ngIf="chartData.length > 0; else noData">
+        <ngx-charts-pie-chart [scheme]="colorScheme" [results]="chartData" [gradient]="false" [legend]="true"
+          [legendTitle]="'Departamentos'" [labels]="true" [doughnut]="true" [arcWidth]="0.4">
+        </ngx-charts-pie-chart>
+      </div>
+
+      <ng-template #noData>
+        <div class="h-80 flex items-center justify-center text-slate-400">
+          <p>Sem dados para exibir.</p>
+        </div>
+      </ng-template>
     </div>
-</ng-template>
+
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Ausentes Hoje</h3>
+
+      <div class="space-y-4">
+        <div *ngFor="let nome of stats?.colaboradoresAusentesHoje"
+          class="flex items-center space-x-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition">
+          <div
+            class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
+            {{ nome.charAt(0) }}
+          </div>
+          <span class="text-slate-700 dark:text-slate-300 font-medium">{{ nome }}</span>
+        </div>
+
+        <div *ngIf="stats?.colaboradoresAusentesHoje?.length === 0" class="text-center py-8 text-slate-400">
+          <p>Todos presentes! 🎉</p>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+        <a href="/gestao-calendario" class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center">
+          Ver calendário completo <span class="ml-1">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>

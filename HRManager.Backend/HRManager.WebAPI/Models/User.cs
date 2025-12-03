@@ -1,32 +1,29 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HRManager.WebAPI.Domain.Base;
+using System.ComponentModel.DataAnnotations;
 
 namespace HRManager.WebAPI.Models
 {
     // User precisa de InstituicaoId, mas não de herdar BaseEntity 
     // se quisermos um modelo de utilizador mais isolado ou se o Gestor Master 
     // não pertencer a uma única instituição. Para simplificar, vamos associá-lo.
-    public class User
+    public class User: BaseEntity
     {
         [Key]
         public int Id { get; set; }
+        public string Nome { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(120)]
-        [EmailAddress]
-        public string Email { get; set; } // O Email será o nosso Username
+        // MUDANÇA AQUI: De byte[] para string
+        public string PasswordHash { get; set; } = string.Empty;
 
-        [Required]
-        public byte[] PasswordHash { get; set; }
+        // Se tiver PasswordSalt, pode REMOVER. O BCrypt não precisa de coluna separada para salt.
+        // public byte[] PasswordSalt { get; set; } 
 
-        [Required]
-        public byte[] PasswordSalt { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
 
-        [Required]
-        [MaxLength(50)]
-        public string Role { get; set; } // Ex: "GestorMaster", "GestorRH"
-
-        // Relação (Opcional, mas útil): A que instituição este utilizador pertence?
-        // Pode ser nulo se for um Gestor Master
+        // Assumindo que o User tem ligação à Instituição (Multi-tenant)
         public Guid? InstituicaoId { get; set; }
+        public Instituicao? Instituicao { get; set; }
     }
 }

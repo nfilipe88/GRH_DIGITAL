@@ -1,27 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HRManager.WebAPI.Domain.enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace HRManager.WebAPI.Models
 {
-    // Enum para o tipo de ausência
-    public enum TipoAusencia
-    {
-        Ferias,
-        Doenca,
-        Justificada,
-        Outro
-    }
-
-    // Enum para o estado do pedido
-    public enum EstadoAusencia
-    {
-        Pendente,
-        Aprovada,
-        Rejeitada,
-        Cancelada
-    }
-
     public class Ausencia
     {
         [Key]

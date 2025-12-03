@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using HRManager.Application.Interfaces;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.Services;
@@ -33,7 +35,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
-// builder.Services.AddControllers();
+builder.Services.AddControllers();
+
 // 2. Modifique esta linha
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -86,6 +89,16 @@ builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAusenciaService, AusenciaService>();
+builder.Services.AddScoped<IColaboradorService, ColaboradorService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IInstituicaoService, InstituicaoService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IAvaliacaoService, AvaliacaoService>();
+builder.Services.AddFluentValidationAutoValidation();
+//builder.Services.AddValidatorsFromAssemblyContaining<CriarColaboradorValidator>(); // Regista todos os validadores
+builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // Regista todos os validadores automaticamente
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

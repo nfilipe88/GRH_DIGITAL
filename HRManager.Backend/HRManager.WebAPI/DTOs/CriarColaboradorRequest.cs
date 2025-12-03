@@ -13,6 +13,8 @@ namespace HRManager.WebAPI.DTOs
         [Required]
         [EmailAddress]
         public string EmailPessoal { get; set; }
+        public string Morada { get; set; }
+        public int? Telemovel { get; set; }
         public DateTime? DataNascimento { get; set; }
 
         // --- Dados Contratuais ---
@@ -21,6 +23,7 @@ namespace HRManager.WebAPI.DTOs
         public string Cargo { get; set; }
         public string TipoContrato { get; set; }
         public decimal SalarioBase { get; set; }
+        public string IBAN { get; set; }
 
         // --- Organização ---
         public string Departamento { get; set; }

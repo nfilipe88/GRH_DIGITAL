@@ -9,6 +9,9 @@ export interface ColaboradorDetails {
   dataNascimento: string | null; // Vem como string ISO
   dataAdmissao: string; // Vem como string ISO
   cargo: string | null;
+  iban: string;
+  telemovel: number | null;
+  morada: string;
   tipoContrato: string | null;
   salarioBase: number | null;
   departamento: string | null;

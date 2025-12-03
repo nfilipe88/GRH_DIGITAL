@@ -23,7 +23,6 @@ namespace HRManager.WebAPI.Models
         [EmailAddress]
         [MaxLength(100)]
         public string EmailPessoal { get; set; }
-
         public DateTime? DataNascimento { get; set; } // 
 
         // --- Secção 2: Dados Contratuais ---
@@ -48,6 +47,7 @@ namespace HRManager.WebAPI.Models
         // *** ADICIONE ESTAS LINHAS ***
         [MaxLength(200)]
         public string? Morada { get; set; }
+        public int? Telemovel { get; set; }
 
         [MaxLength(34)] // Tamanho padrão do IBAN
         public string? IBAN { get; set; }

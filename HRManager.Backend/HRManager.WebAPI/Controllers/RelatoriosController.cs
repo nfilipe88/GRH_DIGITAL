@@ -1,5 +1,6 @@
 ﻿using ClosedXML.Excel;
 using HRManager.Application.Interfaces;
+using HRManager.WebAPI.Domain.enums;
 using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

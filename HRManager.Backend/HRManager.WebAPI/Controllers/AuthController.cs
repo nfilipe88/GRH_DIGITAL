@@ -1,4 +1,5 @@
-﻿using HRManager.WebAPI.Domain.Interfaces;
+﻿using FluentValidation;
+using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -14,13 +15,11 @@ namespace HRManager.WebAPI.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly HRManagerDbContext _context;
-        private readonly ITokenService _tokenService; // Usamos o serviço que já existe
+        private readonly IAuthService _authService;
 
-        public AuthController(HRManagerDbContext context, ITokenService tokenService)
+        public AuthController(IAuthService authService)
         {
-            _context = context;
-            _tokenService = tokenService;
+            _authService = authService;
         }
 
         // ---
@@ -30,85 +29,51 @@ namespace HRManager.WebAPI.Controllers
         [Authorize] // <-- Exige token válido
         public async Task<IActionResult> GetMe()
         {
-            // 1. Ler o ID do utilizador a partir do Token (Claim: NameIdentifier)
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+            // Extrai o email do token (ClaimTypes.Email ou "email")
+            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email");
 
-            int userId = int.Parse(userIdStr);
+            if (string.IsNullOrEmpty(email))
+                return Unauthorized(new { message = "Token inválido." });
 
-            // 2. Buscar dados na BD
-            var userDto = await _context.Users
-                .Where(u => u.Id == userId)
-                .Select(u => new UserDetailsDto
-                {
-                    Id = u.Id,
-                    Email = u.Email,
-                    Role = u.Role,
-                    // Buscar o nome da instituição (subquery simples)
-                    NomeInstituicao = _context.Instituicoes
-                                        .Where(i => i.Id == u.InstituicaoId)
-                                        .Select(i => i.Nome)
-                                        .FirstOrDefault()
-                })
-                .FirstOrDefaultAsync();
-
-            if (userDto == null) return NotFound(new { message = "Utilizador não encontrado." });
-
-            return Ok(userDto);
+            try
+            {
+                var me = await _authService.GetCurrentUserAsync(email);
+                return Ok(me);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { message = "Utilizador não encontrado." });
+            }
         }
 
         [HttpPost("register")]
         [Authorize(Roles = "GestorMaster, GestorRH")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+            try
             {
-                return BadRequest(new { message = "Este email já está a ser utilizado." });
+                var user = await _authService.RegisterAsync(request);
+                return CreatedAtAction(nameof(Login), new { email = user.Email }, user);
             }
-
-            // 1. Criar o Hash e Salt da senha
-            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
-
-            var user = new User
+            catch (ValidationException ex)
             {
-                Email = request.Email,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt,
-                Role = request.Role,
-                InstituicaoId = request.InstituicaoId
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Utilizador registado com sucesso." });
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (user == null)
+            // Validação automática do FluentValidation ocorre aqui
+            try
             {
-                return Unauthorized(new { message = "Credenciais inválidas." });
+                var token = await _authService.LoginAsync(request);
+                return Ok(new { token });
             }
-
-            // 2. Verificar o Hash da senha
-            if (!VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
+            catch (ValidationException ex)
             {
-                return Unauthorized(new { message = "Credenciais inválidas." });
+                return Unauthorized(new { message = ex.Message }); // 401 para falha de login
             }
-
-            // 3. Gerar o Token JWT
-            var token = _tokenService.CreateToken(user);
-
-            // Enviamos o token para o frontend
-            return Ok(new
-            {
-                token = token,
-                email = user.Email,
-                role = user.Role
-            });
         }
 
         // --- MÉTODO: Listar Utilizadores ---
@@ -116,42 +81,12 @@ namespace HRManager.WebAPI.Controllers
         [Authorize(Roles = "GestorMaster, GestorRH")] // <-- PROTEGIDO!
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _context.Users
-                .Select(u => new UserListDto
-                {
-                    Id = u.Id,
-                    Email = u.Email,
-                    Role = u.Role,
-                    // Faz um join opcional para buscar o nome da instituição
-                    NomeInstituicao = _context.Instituicoes
-                                        .Where(i => i.Id == u.InstituicaoId)
-                                        .Select(i => i.Nome)
-                                        .FirstOrDefault()
-                })
-                .ToListAsync();
-
+            var users = await _authService.GetAllUsersAsync();
             return Ok(users);
         }
 
 
         // --- Métodos Auxiliares de Criptografia ---
 
-        private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
-        {
-            using (var hmac = new HMACSHA512())
-            {
-                passwordSalt = hmac.Key;
-                passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-            }
-        }
-
-        private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
-        {
-            using (var hmac = new HMACSHA512(passwordSalt))
-            {
-                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return computedHash.SequenceEqual(passwordHash);
-            }
-        }
     }
 }

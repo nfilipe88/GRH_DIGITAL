@@ -1,4 +1,6 @@
-﻿namespace HRManager.WebAPI.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace HRManager.WebAPI.DTOs
 {
     public class ColaboradorListDto
     {
@@ -7,6 +9,8 @@
         public string EmailPessoal { get; set; }
         public string NIF { get; set; }
         public string Cargo { get; set; }
+        public string Departamento { get; set; }
+        public Guid? InstituicaoId { get; set; }
         public string NomeInstituicao { get; set; } // Apenas o nome
         public bool IsAtivo { get; set; }
     }

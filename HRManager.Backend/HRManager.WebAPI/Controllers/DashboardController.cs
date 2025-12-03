@@ -1,4 +1,5 @@
-﻿using HRManager.WebAPI.DTOs;
+﻿using HRManager.WebAPI.Domain.Interfaces;
+using HRManager.WebAPI.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,28 +12,18 @@ namespace HRManager.WebAPI.Controllers
     [Authorize]
     public class DashboardController : ControllerBase
     {
-        private readonly HRManagerDbContext _context;
+        private readonly IDashboardService _dashboardService;
 
-        public DashboardController(HRManagerDbContext context)
+        public DashboardController(IDashboardService dashboardService)
         {
-            _context = context;
+            _dashboardService = dashboardService;
         }
 
         [HttpGet("stats")]
-        public async Task<IActionResult> GetStats()
+        public async Task<IActionResult> GetStats([FromQuery] Guid? instituicaoId = null)
         {
-            // Esta lógica será expandida no futuro
-            // Por agora, o GestorMaster vê tudo.
-
-            var stats = new DashboardStatsDto
-            {
-                TotalInstituicoes = await _context.Instituicoes.CountAsync(),
-                TotalColaboradores = await _context.Colaboradores.CountAsync(),
-                TotalColaboradoresAtivos = await _context.Colaboradores
-                                                .CountAsync(c => c.IsAtivo == true),
-                TotalUtilizadores = await _context.Users.CountAsync(),
-            };
-
+            // O serviço decide se pode usar o instituicaoId (Master) ou ignora (Tenant normal)
+            var stats = await _dashboardService.GetStatsAsync(instituicaoId);
             return Ok(stats);
         }
     }

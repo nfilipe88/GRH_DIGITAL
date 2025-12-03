@@ -1,9 +1,9 @@
-﻿using HRManager.Application.Interfaces;
+﻿using FluentValidation;
+using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
-using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace HRManager.WebAPI.Controllers
 {
@@ -12,134 +12,59 @@ namespace HRManager.WebAPI.Controllers
     [Authorize(Roles = "GestorMaster, GestorRH")]
     public class ColaboradoresController : ControllerBase
     {
-        private readonly HRManagerDbContext _context;
-        private readonly ITenantService _tenantService;
+        private readonly IColaboradorService _colaboradorService;
 
-        public ColaboradoresController(HRManagerDbContext context, ITenantService tenantService)
+        public ColaboradoresController(IColaboradorService colaboradorService)
         {
-            _context = context;
-            _tenantService = tenantService;
+            _colaboradorService = colaboradorService;
         }
-
-        // ---
-        // NOVO MÉTODO GET (Listar)
-        // Mapeado para: GET api/Colaboradores
-        // ---
-        //[HttpGet]
-        //public async Task<IActionResult> GetColaboradores()
-        //{
-        //    var colaboradores = await _context.Colaboradores
-        //        .Include(c => c.Instituicao) // <-- A MÁGICA ACONTECE AQUI
-        //        .ToListAsync();
-
-        //    return Ok(colaboradores);
-        //}
 
         // ---
         // MÉTODO GET (Listar) - VERSÃO OTIMIZADA COM DTO
         // Mapeado para: GET api/Colaboradores
         // ---
         [HttpGet]
-        public async Task<IActionResult> GetColaboradores()
+        // Adicione [FromQuery] Guid? instituicaoId
+        public async Task<IActionResult> GetColaboradores([FromQuery] Guid? instituicaoId = null)
         {
-            var colaboradores = await _context.Colaboradores
-                .Select(c => new ColaboradorListDto
-                {
-                    Id = c.Id,
-                    NomeCompleto = c.NomeCompleto,
-                    EmailPessoal = c.EmailPessoal,
-                    NIF = c.NIF,
-                    Cargo = c.Cargo,
-                    NomeInstituicao = c.Instituicao.Nome,
-
-                    // *** ADICIONE ESTA LINHA ***
-                    IsAtivo = c.IsAtivo
-                })
-                .ToListAsync();
-
-            return Ok(colaboradores);
+            // Passa o parâmetro (que pode ser null) para o serviço
+            var lista = await _colaboradorService.GetAllAsync(instituicaoId);
+            return Ok(lista);
         }
 
         // ---
         // MÉTODO POST (Cadastrar)
         // Mapeado para: POST api/Colaboradores
-        //[cite_start]// Baseado no CU-02 [cite: 75]
         // ---
         [HttpPost]
         public async Task<IActionResult> CriarColaborador([FromBody] CriarColaboradorRequest request)
         {
-            // --- 5. LÓGICA DE AUTORIZAÇÃO DE INSTITUIÇÃO ---
-            Guid instituicaoIdParaNovoColaborador;
-            // Se for GestorMaster, usa o ID do formulário (dropdown)
-            if (User.IsInRole("GestorMaster"))
+            // 1. Verificar se é GestorRH e forçar o ID do Token
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            if (userRole == "GestorRH")
             {
-                if (!request.InstituicaoId.HasValue)
+                var tenantIdClaim = User.FindFirstValue("InstituicaoId");
+                if (string.IsNullOrEmpty(tenantIdClaim))
                 {
-                    return BadRequest(new { message = "GestorMaster deve selecionar uma instituição para o novo colaborador." });
+                    return Unauthorized(new { message = "Token inválido: Instituição não encontrada." });
                 }
-                instituicaoIdParaNovoColaborador = request.InstituicaoId.Value;
+                // Sobrescreve o que veio do formulário para garantir segurança
+                request.InstituicaoId = Guid.Parse(tenantIdClaim);
             }
-            // Se for GestorRH, usa o ID do seu próprio token
-            else
+            // Validação automática do FluentValidation ocorre aqui antes de entrar no método
+            try
             {
-                var tenantId = _tenantService.GetTenantId(); // Lê o Claim "InstituicaoId" do token
-                if (tenantId == null)
-                {
-                    return Unauthorized(new { message = "GestorRH não está associado a nenhuma instituição." });
-                }
-                instituicaoIdParaNovoColaborador = tenantId.Value;
+                var criado = await _colaboradorService.CreateAsync(request);
+                return CreatedAtAction(nameof(GetColaboradorPorId), new { id = criado.Id }, criado);
             }
-            // --- FIM DA LÓGICA DE AUTORIZAÇÃO ---
-
-            // 1. Validar se a Instituição selecionada existe
-            var instituicao = await _context.Instituicoes.FindAsync(instituicaoIdParaNovoColaborador);
-            if (instituicao == null)
+            catch (ValidationException ex)
             {
-                return BadRequest(new { message = "Instituição selecionada é inválida." });
+                return BadRequest(new { message = ex.Message });
             }
-
-            // 2. Validar Regra de Negócio (RN-02.1)
-            if (await _context.Colaboradores.AnyAsync(c => c.NIF == request.NIF && c.InstituicaoId == instituicaoIdParaNovoColaborador))
+            catch (Exception ex)
             {
-                return BadRequest(new { message = $"O NIF '{request.NIF}' já está registado nesta instituição." });
+                return BadRequest(new { message = ex.Message });
             }
-
-            // 3. Mapear o DTO (pedido) para o Modelo (base de dados)
-            var novoColaborador = new Colaborador
-            {
-                // Dados Pessoais
-                NomeCompleto = request.NomeCompleto,
-                NIF = request.NIF,
-                NumeroAgente = request.NumeroAgente,
-                EmailPessoal = request.EmailPessoal,
-
-                // CORREÇÃO AQUI:
-                DataNascimento = request.DataNascimento.HasValue
-                    ? DateTime.SpecifyKind(request.DataNascimento.Value, DateTimeKind.Utc)
-                    : null,
-
-                // Dados Contratuais
-                // E CORREÇÃO AQUI:
-                DataAdmissao = DateTime.SpecifyKind(request.DataAdmissao, DateTimeKind.Utc),
-
-                Cargo = request.Cargo,
-                TipoContrato = request.TipoContrato,
-                SalarioBase = request.SalarioBase,
-
-                // Organização
-                Departamento = request.Departamento,
-                Localizacao = request.Localizacao,
-
-                // Relação
-                InstituicaoId = (Guid)request.InstituicaoId
-            };
-
-            // 4. Adicionar ao DbContext e Salvar
-            _context.Colaboradores.Add(novoColaborador);
-            await _context.SaveChangesAsync();
-
-            //[cite_start]// 5. Retornar uma resposta 201 Created (Confirmação [cite: 117])
-            return StatusCode(201, new { message = $"Colaborador '{novoColaborador.NomeCompleto}' criado com sucesso." });
         }
 
         // ---
@@ -151,17 +76,8 @@ namespace HRManager.WebAPI.Controllers
         {
             // Vamos buscar o colaborador pela sua chave primária (Id)
             // Usamos o AsNoTracking() porque apenas queremos ler os dados, não os vamos modificar aqui
-            var colaborador = await _context.Colaboradores
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (colaborador == null)
-            {
-                return NotFound(new { message = "Colaborador não encontrado." });
-            }
-
-            // Nota: Retornamos o MODELO completo, pois o formulário de edição
-            // precisa de todos os campos.
+            var colaborador = await _colaboradorService.GetByIdAsync(id);
+            if (colaborador == null) return NotFound(new { message = "Colaborador não encontrado." });
             return Ok(colaborador);
         }
 
@@ -170,70 +86,17 @@ namespace HRManager.WebAPI.Controllers
         // Mapeado para: PUT api/Colaboradores/{id}
         // ---
         [HttpPut("{id}")]
-        public async Task<IActionResult> AtualizarColaborador(int id, [FromBody] CriarColaboradorRequest request)
+        public async Task<IActionResult> AtualizarColaborador(int id, [FromBody] AtualizarDadosPessoaisRequest request)
         {
-            var colaborador = await _context.Colaboradores.FirstOrDefaultAsync(c => c.Id == id);
-            if (colaborador == null)
+            try
+            {
+                var atualizado = await _colaboradorService.UpdateAsync(id, request);
+                return Ok(atualizado);
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound(new { message = "Colaborador não encontrado." });
             }
-
-            Guid instituicaoIdParaAtualizar;
-
-            // Se for GestorMaster, pode (teoricamente) mudar o colaborador de instituição
-            if (User.IsInRole("GestorMaster"))
-            {
-                if (!request.InstituicaoId.HasValue)
-                {
-                    return BadRequest(new { message = "GestorMaster deve selecionar uma instituição." });
-                }
-                instituicaoIdParaAtualizar = request.InstituicaoId.Value;
-            }
-            // Se for GestorRH, SÓ PODE editar colaboradores da sua própria instituição
-            else
-            {
-                var tenantId = _tenantService.GetTenantId();
-                if (tenantId == null)
-                {
-                    return Unauthorized(new { message = "GestorRH não está associado a nenhuma instituição." });
-                }
-
-                // Medida de Segurança: Garante que um GestorRH não edite
-                // colaboradores de outra instituição (mesmo que saiba o ID)
-                if (colaborador.InstituicaoId != tenantId.Value)
-                {
-                    return Forbid("Não tem permissão para editar colaboradores de outra instituição.");
-                }
-                instituicaoIdParaAtualizar = tenantId.Value;
-            }
-
-            // --- Mapear os dados do DTO para o modelo da BD ---
-            // Dados Pessoais
-            colaborador.NomeCompleto = request.NomeCompleto;
-            colaborador.NIF = request.NIF;
-            colaborador.NumeroAgente = request.NumeroAgente;
-            colaborador.EmailPessoal = request.EmailPessoal;
-            // Corrigir o DateTimeKind
-            colaborador.DataNascimento = request.DataNascimento.HasValue
-                ? DateTime.SpecifyKind(request.DataNascimento.Value, DateTimeKind.Utc)
-                : null;
-
-            // Dados Contratuais
-            colaborador.DataAdmissao = DateTime.SpecifyKind(request.DataAdmissao, DateTimeKind.Utc);
-            colaborador.Cargo = request.Cargo;
-            colaborador.TipoContrato = request.TipoContrato;
-            colaborador.SalarioBase = request.SalarioBase;
-
-            // Organização
-            colaborador.Departamento = request.Departamento;
-            colaborador.Localizacao = request.Localizacao;
-            colaborador.InstituicaoId = (Guid)request.InstituicaoId;
-            // --- Fim do Mapeamento ---
-
-            _context.Colaboradores.Update(colaborador);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Colaborador '{colaborador.NomeCompleto}' atualizado com sucesso." });
         }
 
         // ---
@@ -246,43 +109,36 @@ namespace HRManager.WebAPI.Controllers
         {
             // Reutilizamos o DTO 'AtualizarEstadoRequest' que já existe
 
-            var colaborador = await _context.Colaboradores.FindAsync(id);
-
-            if (colaborador == null)
+            try
             {
-                return NotFound(new { message = "Colaborador não encontrado." });
+                await _colaboradorService.ToggleAtivoAsync(id);
+                return Ok(new { message = "Estado alterado com sucesso." });
             }
-
-            colaborador.IsAtivo = request.IsAtiva;
-            // No futuro, aqui adicionaremos o "MotivoInatividade"
-
-            _context.Colaboradores.Update(colaborador);
-            await _context.SaveChangesAsync();
-
-            string acao = colaborador.IsAtivo ? "reativado" : "desativado";
-            return Ok(new { message = $"Colaborador '{colaborador.NomeCompleto}' {acao} com sucesso." });
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         // ---
-        // NOVO MÉTODO DELETE (Eliminar)
+        // MÉTODO DELETE (Eliminar)
         // Mapeado para: DELETE api/Colaboradores/{id}
         // ---
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "GestorMaster")]
-        public async Task<IActionResult> DeletarColaborador(int id)
-        {
-            var colaborador = await _context.Colaboradores.FindAsync(id);
+        //[HttpDelete("{id}")]
+        //[Authorize(Roles = "GestorMaster")]
+        //public async Task<IActionResult> DeletarColaborador(int id)
+        //{
+        //    try
+        //    {
+        //        await _colaboradorService.DeleteAsync(id);
+        //    }
+        //    catch (Exception)
+        //    {
 
-            if (colaborador == null)
-            {
-                return NotFound(new { message = "Colaborador não encontrado." });
-            }
+        //        throw;
+        //    }
 
-            // Implementa um "Hard Delete" (eliminação física)
-            _context.Colaboradores.Remove(colaborador);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Colaborador '{colaborador.NomeCompleto}' eliminado com sucesso." });
-        }
+        //    return Ok(new { message = $"Colaborador '{colaborador.NomeCompleto}' eliminado com sucesso." });
+        //}
     }
 }

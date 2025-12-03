@@ -7,4 +7,8 @@ export interface DashboardStats {
   totalColaboradores: number;
   totalUtilizadores: number;
   totalColaboradoresAtivos: number;
+  ausenciasPendentes: number;
+  novasAdmissoesMes: number;
+  colaboradoresPorDepartamento: { [key: string]: number };
+  colaboradoresAusentesHoje: string[];
 }

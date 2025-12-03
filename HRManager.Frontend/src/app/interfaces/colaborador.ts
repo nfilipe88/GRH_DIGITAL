@@ -5,7 +5,17 @@ export interface Colaborador {
   nomeCompleto: string;
   emailPessoal: string;
   nif: string;
-  nomeInstituicao: string; // <-- Mudança principal
+  dataAdmissao: string;
+  nomeInstituicao: string;
+  tipoContrato: string;
+  salarioBase: number;
   cargo: string | null;
   isAtivo: boolean;
+  departamento: string;
+  localizacao: string;
+  morada: string;
+  telemovel?: number | null;
+  iban: string;
+  saldoFerias: number;
+
 }

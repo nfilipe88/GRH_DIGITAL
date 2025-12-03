@@ -2,7 +2,7 @@
 
 using HRManager.WebAPI.Domain.Interfaces;
 
-namespace HRManager.Domain.Entities.Base
+namespace HRManager.WebAPI.Domain.Base
 {
     public abstract class BaseEntity : IHaveTenant
     {

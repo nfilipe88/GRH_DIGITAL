@@ -13,6 +13,8 @@ import { GestaoCalendario } from './pages/gestao-calendario/gestao-calendario';
 import { Perfil } from './pages/perfil/perfil';
 import { EmissaoDeclaracoes } from './pages/emissao-declaracoes/emissao-declaracoes';
 import { MinhasDeclaracoes } from './pages/minhas-declaracoes/minhas-declaracoes';
+import { RealizarAvaliacao } from './pages/realizar-avaliacao/realizar-avaliacao';
+import { ListaAvaliacao } from './pages/lista-avaliacao/lista-avaliacao';
 
 export const routes: Routes = [
   // 2. Rota pública de Login.
@@ -41,10 +43,12 @@ export const routes: Routes = [
       { path: 'utilizadores', component: GestaoUtilizadores },
       { path: 'minhas-ausencias', component: MinhasAusencias },
       { path: 'gestao-ausencias', component: GestaoAusencias },
-      { path: 'gestao-calendario', component: GestaoCalendario},
+      { path: 'gestao-calendario', component: GestaoCalendario },
       { path: 'perfil', component: Perfil },
-      { path: 'minhas-declaracoes', component: MinhasDeclaracoes},
-      { path: 'emissao-declaracoes', component: EmissaoDeclaracoes},
+      { path: 'minhas-declaracoes', component: MinhasDeclaracoes },
+      { path: 'emissao-declaracoes', component: EmissaoDeclaracoes },
+      { path: 'avaliacoes/realizar/:id', component: RealizarAvaliacao },
+      { path: 'avaliacoes/minha-equipa', component: ListaAvaliacao },
     ],
   },
 

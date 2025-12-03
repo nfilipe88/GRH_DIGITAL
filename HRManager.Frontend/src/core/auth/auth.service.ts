@@ -34,6 +34,8 @@ export class AuthService {
   // *** 1. ADICIONAR UMA CHAVE PARA O CARGO (ROLE) ***
   private readonly ROLE_KEY = 'hr_manager_role';
 
+  constructor() { }
+
   /**
    * Tenta fazer login na API
    */
@@ -64,8 +66,21 @@ export class AuthService {
   }
 
   // *** 3. MÉTODO PARA LER O CARGO ***
+  // public getUserRole(): string | null {
+  //   return localStorage.getItem(this.ROLE_KEY);
+  // }
+
   public getUserRole(): string | null {
-    return localStorage.getItem(this.ROLE_KEY);
+    // Implementação similar para obter a role (ou ler do localStorage se já guardou lá)
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      // O claim de role muitas vezes vem como "role" ou a URI longa da Microsoft
+      return payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -94,5 +109,54 @@ export class AuthService {
   // *** 2. NOVO MÉTODO ***
   public getUsers(): Observable<UserListDto[]> {
     return this.http.get<UserListDto[]>(`${this.apiUrl}/users`);
+  }
+
+  // --- NOVO MÉTODO: Extrair InstituicaoId do Token ---
+  public getInstituicaoId(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      // O JWT tem 3 partes separadas por pontos. A 2ª parte é o Payload (dados).
+      const payloadPart = token.split('.')[1];
+
+      // Descodificar Base64Url para JSON string
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+
+      const payload = JSON.parse(jsonPayload);
+
+      // A chave deve bater certo com "InstituicaoId" definido no TokenService.cs (C#)
+      return payload.InstituicaoId || null;
+    } catch (error) {
+      console.error('Erro ao descodificar o token:', error);
+      return null;
+    }
+  }
+
+  public getInstituicaoNome(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payloadPart = token.split('.')[1];
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.InstituicaoNome || null; // Retorna o nome que adicionámos no C#
+    } catch (error) {
+      return null;
+    }
   }
 }
