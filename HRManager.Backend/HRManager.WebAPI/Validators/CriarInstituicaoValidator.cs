@@ -13,7 +13,7 @@ namespace HRManager.WebAPI.Validators
 
             RuleFor(x => x.IdentificadorUnico)
                 .NotEmpty().WithMessage("O identificador único (slug) é obrigatório.")
-                .Matches("^[a-z0-9-]+$").WithMessage("O identificador deve conter apenas letras minúsculas, números e hífens (ex: 'minha-empresa').");
+                .Matches("^[A-Z0-9-]+$").WithMessage("O identificador deve conter apenas letras maiúsculas, números e hífens (ex: 'MINHA-EMPRESA').");
 
             RuleFor(x => x.NIF)
                 .NotEmpty().WithMessage("O NIF é obrigatório.");

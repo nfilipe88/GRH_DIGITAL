@@ -37,18 +37,15 @@ namespace HRManager.WebAPI.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal? SalarioBase { get; set; }
-
         // --- Secção 3: Organização ---
         [MaxLength(100)]
         public string Departamento { get; set; }
-
         [MaxLength(100)]
         public string Localizacao { get; set; }
         // *** ADICIONE ESTAS LINHAS ***
         [MaxLength(200)]
         public string? Morada { get; set; }
         public int? Telemovel { get; set; }
-
         [MaxLength(34)] // Tamanho padrão do IBAN
         public string? IBAN { get; set; }
         // ******************************

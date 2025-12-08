@@ -60,7 +60,26 @@ namespace HRManager.WebAPI.Services
                 Id = c.Id,
                 NomeCompleto = c.NomeCompleto,
                 Email = c.EmailPessoal,
-                Cargo = c.Cargo
+                NIF = c.NIF,
+                NumeroAgente = c.NumeroAgente,
+                DataAdmissao = c.DataAdmissao,
+                DataNascimento = c.DataNascimento, // Importante
+
+                // --- ADICIONE ESTES CAMPOS QUE FALTAM ---
+                Morada = c.Morada,
+                Telemovel = c.Telemovel,
+                IBAN = c.IBAN,
+                SalarioBase = c.SalarioBase,
+                Cargo = c.Cargo,
+                TipoContrato = c.TipoContrato,
+                Departamento = c.Departamento,
+                Localizacao = c.Localizacao,
+                // ----------------------------------------
+
+                InstituicaoNome = c.Instituicao.Nome,
+                InstituicaoId = c.InstituicaoId, // Necessário para o GestorRH não perder a referência
+                SaldoFerias = c.SaldoFerias,
+                IsAtivo = c.IsAtivo
             };
         }
 

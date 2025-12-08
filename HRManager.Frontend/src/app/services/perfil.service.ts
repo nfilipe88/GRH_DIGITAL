@@ -5,13 +5,15 @@ import { CriarCertificacaoRequest } from '../interfaces/criarCertificacaoRequest
 import { CriarHabilitacaoRequest } from '../interfaces/criarHabilitacaoRequest';
 import { PerfilDto } from '../interfaces/perfilDto';
 import { AtualizarDadosPessoaisRequest } from '../interfaces/atualizarDadosPessoaisRequest';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PerfilService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://localhost:7234/api/Perfil'; // Confirme a sua porta!
+  // private apiUrl = 'https://localhost:7234/api/Perfil'; // Confirme a sua porta!
+  private apiUrl = `${environment.apiUrl}/Perfil`;
 
   /**
    * Obtém o perfil.

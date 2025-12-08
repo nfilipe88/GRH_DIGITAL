@@ -54,7 +54,7 @@ namespace HRManager.WebAPI.Services
                 IdentificadorUnico = request.IdentificadorUnico.ToUpper(),
                 NIF = request.NIF,
                 Endereco = request.Endereco,
-                Telefone = request.Telefone,
+                Telemovel = request.Telemovel,
                 EmailContato = request.EmailContato,
                 DataCriacao = DateTime.UtcNow,
                 IsAtiva = true
@@ -73,8 +73,10 @@ namespace HRManager.WebAPI.Services
                 throw new KeyNotFoundException("Instituição não encontrada.");
 
             instituicao.Nome = request.Nome;
+            instituicao.IdentificadorUnico = request.IdentificadorUnico;
+            instituicao.NIF = request.NIF;
             instituicao.Endereco = request.Endereco;
-            instituicao.Telefone = request.Telefone;
+            instituicao.Telemovel = request.Telemovel;
             instituicao.EmailContato = request.EmailContato;
 
             // Nota: Geralmente não permitimos alterar o Slug ou NIF após a criação por questões de integridade

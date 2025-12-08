@@ -39,7 +39,7 @@ namespace HRManager.WebAPI.Migrations
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<int>(
-                name: "Telefone",
+                name: "Telemovel",
                 table: "Instituicoes",
                 type: "integer",
                 nullable: false,
@@ -66,7 +66,7 @@ namespace HRManager.WebAPI.Migrations
                 table: "Instituicoes");
 
             migrationBuilder.DropColumn(
-                name: "Telefone",
+                name: "Telemovel",
                 table: "Instituicoes");
         }
     }

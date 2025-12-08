@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { CriarInstituicaoRequest, Instituicao, InstituicaoService } from '../../services/instituicao.service';
+import { InstituicaoService } from '../../services/instituicao.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CriarInstituicaoRequest } from '../../interfaces/criarInstituicaoRequest';
+import { Instituicao } from '../../interfaces/instituicao';
 
 
 @Component({
@@ -11,30 +13,30 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './gestao-instituicoes.css',
 })
 export class GestaoInstituicoes implements OnInit {
-// Propriedade para guardar a lista de instituições vinda da API
   public listaInstituicoes: Instituicao[] = [];
-
   // Propriedade para fazer o "data binding" com o formulário
   // Corresponde aos campos do nosso DTO
-  public dadosFormulario: CriarInstituicaoRequest = {
+  public dadosFormulario = {
+    // id: null,
     nome: '',
-    identificadorUnico: ''
+    identificadorUnico: '',
+    nif: '',
+    endereco: '',
+    telemovel: null as number | null,
+    emailContato: ''
   };
 
   // --- LÓGICA DE EDIÇÃO ---
   // Guarda o ID da instituição que estamos a editar
   public idInstituicaoEmEdicao: string | null = null;
-  // --- FIM LÓGICA DE EDIÇÃO ---
 
   // Mensagem de feedback (sucesso ou erro)
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
-
-  // *** ADICIONAR ESTA PROPRIEDADE ***
   public isModalAberto: boolean = false;
 
   // Injetar o nosso serviço para o podermos usar
-  constructor(private instituicaoService: InstituicaoService) {}
+  constructor(private instituicaoService: InstituicaoService) { }
 
   // ngOnInit é chamado automaticamente quando o componente é carregado
   ngOnInit(): void {
@@ -57,20 +59,39 @@ export class GestaoInstituicoes implements OnInit {
     });
   }
 
+  // --- MÉTODO: Gerar Slug automaticamente ---
+  // Ligue isto ao (input) do campo Nome no HTML ou chame no onSubmit
+  public gerarIdentificador(): void {
+    if (this.dadosFormulario.nome) {
+      this.dadosFormulario.identificadorUnico = this.dadosFormulario.nome
+        .toUpperCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
+        .replace(/[\s_-]+/g, '-') // Substitui espaços por hifens
+        .replace(/^-+|-+$/g, ''); // Remove hifens nas pontas
+    }
+  }
+
   /**
    * Método chamado quando o formulário é submetido.
    * Agora decide se deve "Criar" ou "Atualizar".
    */
   onSubmit(): void {
     this.limparFeedback();
+    // 1. Garantir que o Slug existe (se o utilizador não preencheu, geramos agora)
+    if (!this.dadosFormulario.identificadorUnico) {
+      this.gerarIdentificador();
+    }
+
+    // 2. Limpeza de dados (Sanitization)
+    const requestData = { ...this.dadosFormulario };
 
     if (this.idInstituicaoEmEdicao) {
       // --- FLUXO DE ATUALIZAÇÃO ---
-      this.instituicaoService.atualizarInstituicao(this.idInstituicaoEmEdicao, this.dadosFormulario).subscribe({
+      this.instituicaoService.atualizarInstituicao(this.idInstituicaoEmEdicao, requestData).subscribe({
         next: (instituicaoAtualizada) => {
           this.mostrarFeedback(`Instituição "${instituicaoAtualizada.nome}" atualizada com sucesso!`, false);
           this.carregarInstituicoes();
-          // *** ADICIONAR LINHA ***
           this.fecharModal();
         },
         error: (err) => {
@@ -79,15 +100,17 @@ export class GestaoInstituicoes implements OnInit {
       });
     } else {
       // --- FLUXO DE CRIAÇÃO ---
-      this.instituicaoService.criarInstituicao(this.dadosFormulario).subscribe({
+      this.instituicaoService.criarInstituicao(requestData).subscribe({
         next: (nova) => {
           this.mostrarFeedback(`Instituição "${nova.nome}" criada com sucesso!`, false);
           this.carregarInstituicoes();
-          // *** ADICIONAR LINHA ***
           this.fecharModal();
         },
         error: (err) => {
           this.mostrarFeedback(err.error?.message || 'Erro ao criar instituição.', true);
+          console.error('Erro Backend:', err.error);
+          const msg = err.error?.errors ? JSON.stringify(err.error.errors) : 'Erro ao criar';
+          alert(msg);
         }
       });
     }
@@ -100,9 +123,12 @@ export class GestaoInstituicoes implements OnInit {
     this.idInstituicaoEmEdicao = instituicao.id;
     this.dadosFormulario = {
       nome: instituicao.nome,
-      identificadorUnico: instituicao.identificadorUnico
+      identificadorUnico: instituicao.identificadorUnico,
+      nif: instituicao.nif,
+      endereco: instituicao.endereco,
+      telemovel: instituicao.telemovel ? Number(instituicao.telemovel) : null,
+      emailContato: instituicao.emailContato
     };
-    // *** ADICIONAR LINHA ***
     this.isModalAberto = true;
     this.limparFeedback();
   }
@@ -156,7 +182,14 @@ export class GestaoInstituicoes implements OnInit {
 
   private resetarFormulario(): void {
     this.idInstituicaoEmEdicao = null;
-    this.dadosFormulario = { nome: '', identificadorUnico: '' };
+    this.dadosFormulario = {
+      nome: '',
+      identificadorUnico: '',
+      nif: '',
+      endereco: '',
+      telemovel: null as number | null,
+      emailContato: ''
+    };
   }
 
   private mostrarFeedback(mensagem: string, ehErro: boolean): void {

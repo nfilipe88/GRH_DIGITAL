@@ -5,13 +5,14 @@ import { AusenciaDto } from '../interfaces/ausenciaDto';
 import { ResponderAusenciaRequest } from '../interfaces/responderAusenciaRequest';
 import { CriarAusenciaRequest } from '../interfaces/criarAusenciaRequest';
 import { AusenciaSaldoDto } from '../interfaces/ausenciaSaldoDto';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AusenciaService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://localhost:7234/api/Ausencias'; // Confirme a sua porta!
+  private apiUrl = `${environment.apiUrl}/Ausencias`;
 
   /**
    * Busca a lista de ausências (O backend decide se mostra todas ou só as minhas)
@@ -64,7 +65,7 @@ export class AusenciaService {
    */
   public downloadRelatorioExcel(mes: number, ano: number): Observable<Blob> {
     // Importante: Definir responseType como 'blob' para o Angular saber que é um ficheiro
-    const url = `https://localhost:7234/api/Relatorios/ausencias?mes=${mes}&ano=${ano}`;
+    const url = `${environment.apiUrl}/Relatorios/ausencias?mes=${mes}&ano=${ano}`;
     return this.http.get(url, { responseType: 'blob' });
   }
 }

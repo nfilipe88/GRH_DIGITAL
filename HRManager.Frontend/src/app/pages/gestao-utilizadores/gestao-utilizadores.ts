@@ -1,8 +1,9 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { InstituicaoService, Instituicao } from '../../services/instituicao.service';
+import { InstituicaoService } from '../../services/instituicao.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService, RegisterRequest, UserListDto } from '../../../core/auth/auth.service';
+import { Instituicao } from '../../interfaces/instituicao';
 
 @Component({
   selector: 'app-gestao-utilizadores',

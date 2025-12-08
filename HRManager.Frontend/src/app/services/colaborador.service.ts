@@ -4,14 +4,15 @@ import { Observable } from 'rxjs';
 import { Colaborador } from '../interfaces/colaborador';
 import { ColaboradorDetails } from '../interfaces/colaboradorDetails';
 import { CriarColaboradorRequest } from '../interfaces/criarColaboradorRequest';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ColaboradorService {
 
-  // private apiUrl = 'http://localhost:5003/api/Colaboradores'; // Use a porta correta!
-  private apiUrl = 'https://localhost:7234/api/Colaboradores'; // Use a porta correta! https
+  // private apiUrl = 'https://localhost:7234/api/Colaboradores'; // Use a porta correta! https
+  private apiUrl = `${environment.apiUrl}/Colaboradores`;
 
   constructor(private http: HttpClient) { }
 
@@ -53,7 +54,6 @@ export class ColaboradorService {
   // ---
   public atualizarEstadoColaborador(id: number, isAtiva: boolean): Observable<any> {
     const request = { isAtiva: isAtiva };
-    // Usamos o novo endpoint de ESTADO
     return this.http.patch<any>(`${this.apiUrl}/${id}/estado`, request);
   }
 

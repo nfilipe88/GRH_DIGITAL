@@ -20,13 +20,15 @@ namespace HRManager.WebAPI.Controllers
         private readonly ITenantService _tenantService;
         private readonly IWebHostEnvironment _env;
         private readonly IEmailService _emailService;
+        private readonly INotificationService _notificationService;
 
-        public DeclaracoesController(HRManagerDbContext context, ITenantService tenantService, IWebHostEnvironment env, IEmailService emailService)
+        public DeclaracoesController(HRManagerDbContext context, ITenantService tenantService, IWebHostEnvironment env, IEmailService emailService, INotificationService notificationService)
         {
             _context = context;
             _tenantService = tenantService;
             _env = env;
             _emailService = emailService;
+            _notificationService = notificationService;
         }
 
         // ---
@@ -99,7 +101,8 @@ namespace HRManager.WebAPI.Controllers
             _context.PedidosDeclaracao.Add(pedido);
             await _context.SaveChangesAsync();
 
-            // (Opcional) Enviar email ao RH a avisar do novo pedido?
+            // (Opcional) Enviar notificação ao RH a avisar do novo pedido?
+            await _notificationService.EnviarNotificacaoNovoPedido(pedido);
 
             return Ok(new { message = "Pedido de declaração enviado." });
         }
@@ -160,7 +163,22 @@ namespace HRManager.WebAPI.Controllers
             await _context.SaveChangesAsync();
 
             // Enviar Email de Sucesso com link ou aviso
-            await EnviarEmailNotificacao(pedido, true);
+            // await EnviarEmailNotificacao(pedido, true);
+            // Enviar Email
+            await EnviarEmailNotificacao(pedido, !rejeitar);
+
+            // --- ADICIONAR ISTO (SINO) ---
+            string mensagem = rejeitar
+                ? $"O seu pedido de declaração ({pedido.Tipo}) foi rejeitado."
+                : $"A sua declaração ({pedido.Tipo}) está pronta para download.";
+
+            await _notificationService.NotifyUserByEmailAsync(
+                pedido.Colaborador.EmailPessoal,
+                rejeitar ? "Pedido Rejeitado" : "Declaração Pronta",
+                mensagem,
+                "/minhas-declaracoes" // Link para onde o user vai ao clicar
+            );
+            // -----------------------------
 
             return Ok(new { message = "Declaração emitida e enviada ao colaborador." });
         }
@@ -187,7 +205,7 @@ namespace HRManager.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro email: {ex.Message}");
+                Console.WriteLine($"ERRO CRÍTICO EMAIL: {ex.Message}");
             }
         }
     }

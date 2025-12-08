@@ -1,0 +1,89 @@
+<div class="p-6 max-w-7xl mx-auto">
+  <h1 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">O Meu Desempenho</h1>
+
+  <div *ngIf="loading" class="flex justify-center py-12">
+    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+  </div>
+
+  <div *ngIf="!loading && avaliacoes.length === 0" class="text-center py-12 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+    <p class="text-slate-500">Ainda não tem avaliações registadas.</p>
+  </div>
+
+  <div *ngIf="!loading && avaliacoes.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden h-fit">
+      <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+        <h3 class="font-semibold text-slate-700 dark:text-slate-200">Histórico</h3>
+      </div>
+      <div class="divide-y divide-slate-100 dark:divide-slate-700">
+        <button *ngFor="let item of avaliacoes"
+                (click)="selecionarAvaliacao(item)"
+                class="w-full text-left p-4 hover:bg-blue-50 dark:hover:bg-slate-700 transition flex justify-between items-center group"
+                [ngClass]="{'bg-blue-50 dark:bg-slate-700 border-l-4 border-blue-600': avaliacaoSelecionada?.id === item.id}">
+          <div>
+            <p class="font-medium text-slate-800 dark:text-white">{{ item.nomeCiclo }}</p>
+            <p class="text-xs text-slate-500">{{ item.dataConclusao | date:'dd/MM/yyyy' }}</p>
+          </div>
+
+          <div *ngIf="item.notaFinal" class="bg-white dark:bg-slate-800 px-2 py-1 rounded text-sm font-bold shadow-sm"
+               [ngClass]="item.notaFinal >= 4 ? 'text-green-600' : (item.notaFinal >= 3 ? 'text-yellow-600' : 'text-red-600')">
+            {{ item.notaFinal | number:'1.1-1' }}
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 space-y-6" *ngIf="avaliacaoSelecionada">
+
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800 dark:text-white">{{ avaliacaoSelecionada.nomeCiclo }}</h2>
+            <p class="text-slate-500 text-sm">Avaliado por: {{ avaliacaoSelecionada.nomeGestor }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Score Final</p>
+            <p class="text-4xl font-bold text-blue-600">{{ avaliacaoSelecionada.notaFinal | number:'1.1-1' }}</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700" *ngIf="avaliacaoSelecionada.comentarioFinalGestor">
+          <p class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Feedback do Gestor:</p>
+          <p class="text-slate-600 dark:text-slate-400 italic">"{{ avaliacaoSelecionada.comentarioFinalGestor }}"</p>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-700">
+          <h3 class="font-semibold text-slate-700 dark:text-slate-200">Competências Avaliadas</h3>
+        </div>
+
+        <div class="divide-y divide-slate-100 dark:divide-slate-700">
+          <div *ngFor="let item of avaliacaoSelecionada.itens" class="p-6">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h4 class="font-medium text-slate-800 dark:text-white">{{ item.tituloCompetencia }}</h4>
+                <p class="text-sm text-slate-500 mt-1">{{ item.descricaoCompetencia }}</p>
+              </div>
+              <div class="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full text-sm font-bold">
+                {{ item.notaGestor }} / 5
+              </div>
+            </div>
+
+            <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mt-3 mb-2">
+              <div class="h-2 rounded-full transition-all duration-1000"
+                   [style.width.%]="(item.notaGestor || 0) * 20"
+                   [ngClass]="(item.notaGestor || 0) >= 4 ? 'bg-green-500' : ((item.notaGestor || 0) >= 3 ? 'bg-yellow-500' : 'bg-red-500')">
+              </div>
+            </div>
+
+            <p *ngIf="item.comentario" class="text-sm text-slate-600 dark:text-slate-400 mt-2 bg-slate-50 dark:bg-slate-900 p-2 rounded">
+              <span class="font-semibold">Obs:</span> {{ item.comentario }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

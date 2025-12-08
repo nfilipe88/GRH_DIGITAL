@@ -1,142 +1,117 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ColaboradorService } from '../../services/colaborador.service';
-import { Instituicao, InstituicaoService } from '../../services/instituicao.service';
-import { FormsModule } from '@angular/forms';
+import { InstituicaoService } from '../../services/instituicao.service';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Colaborador } from '../../interfaces/colaborador';
-import { CriarColaboradorRequest } from '../../interfaces/criarColaboradorRequest';
+import { Instituicao } from '../../interfaces/instituicao';
 
 @Component({
   selector: 'app-gestao-colaboradores',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule],
   templateUrl: './gestao-colaboradores.html',
   styleUrl: './gestao-colaboradores.css',
 })
 export class GestaoColaboradores implements OnInit {
+  // Injeção de dependências
+  private fb = inject(FormBuilder);
   private colaboradorService = inject(ColaboradorService);
   private instituicaoService = inject(InstituicaoService);
   private authService = inject(AuthService);
 
-  public dadosFormulario: CriarColaboradorRequest;
+  // Variáveis de Estado
+  public colaboradorForm: FormGroup; // O nosso novo formulário Reativo
   public listaInstituicoes: Instituicao[] = [];
   public listaColaboradores: Colaborador[] = [];
 
   public isModalAberto: boolean = false;
   public idColaboradorEmEdicao: number | null = null;
-
   public loggedInUserRole: string | null = null;
+  public nomeInstituicaoGestor: string = '';
 
+  // Feedback visual
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
 
-  public nomeInstituicaoGestor: string = '';
-
-  // Adicione uma variável para controlar se o formulário está pronto
-  public isFormReady: boolean = false;
-
   constructor() {
-    this.dadosFormulario = this.criarFormularioVazio();
     this.loggedInUserRole = this.authService.getUserRole();
 
-    // Pré-carregar a instituição do GestorRH se aplicável
-    if (this.loggedInUserRole === 'GestorRH') {
-      const instituicaoId = this.authService.getInstituicaoId();
-      const instituicaoNome = this.authService.getInstituicaoNome();
+    // Inicializar o formulário com as validações
+    this.colaboradorForm = this.fb.group({
+      nomeCompleto: ['', [Validators.required, Validators.minLength(3)]],
+      emailPessoal: ['', [Validators.required, Validators.email]],
+      nif: ['', [Validators.required, Validators.pattern(/^\d{9}$/)]], // Exatamente 9 dígitos
+      instituicaoId: ['', [Validators.required]],
 
-      if (instituicaoId && instituicaoNome) {
-        this.dadosFormulario.instituicaoId = instituicaoId;
-        this.nomeInstituicaoGestor = instituicaoNome;
-        this.isFormReady = true;
-      }
-    } else if (this.loggedInUserRole === 'GestorMaster') {
-      // Para GestorMaster, o formulário estará pronto após carregar as instituições
-      this.isFormReady = true;
-    }
+      // Campos opcionais mas com validação de formato se preenchidos
+      telemovel: [null, [Validators.pattern(/^[0-9]{9}$/)]],
+      salarioBase: [null, [Validators.min(0)]],
+      numeroAgente: [null],
+
+      // Outros campos
+      morada: [''],
+      iban: [''],
+      dataNascimento: [null],
+      dataAdmissao: [new Date().toISOString().split('T')[0], Validators.required],
+      cargo: [''],
+      tipoContrato: [''],
+      departamento: [''],
+      localizacao: ['']
+    });
   }
 
   ngOnInit(): void {
     this.carregarColaboradores();
+    this.configurarPermissoes();
+  }
 
+  configurarPermissoes(): void {
     if (this.loggedInUserRole === 'GestorMaster') {
       this.carregarInstituicoes();
     } else if (this.loggedInUserRole === 'GestorRH') {
-      // Já foi pré-carregado no construtor
-      console.log('Instituição do GestorRH:', this.nomeInstituicaoGestor, 'ID:', this.dadosFormulario.instituicaoId);
+      // Pré-preencher a instituição e bloquear o campo se necessário
+      const instId = this.authService.getInstituicaoId();
+      const instNome = this.authService.getInstituicaoNome();
+
+      if (instId) {
+        this.colaboradorForm.patchValue({ instituicaoId: instId });
+        this.nomeInstituicaoGestor = instNome || '';
+      }
     }
   }
 
   carregarInstituicoes(): void {
     this.instituicaoService.getInstituicoes().subscribe({
-      next: (data) => {
-        this.listaInstituicoes = data.filter(inst => inst.isAtiva);
-        this.isFormReady = true;
-      },
-      error: (err) => {
-        this.mostrarFeedback('Erro ao carregar instituições.', true);
-        this.isFormReady = false;
-      }
+      next: (data) => this.listaInstituicoes = data.filter(i => i.isAtiva),
+      error: () => this.mostrarFeedback('Erro ao carregar instituições.', true)
     });
   }
 
   carregarColaboradores(): void {
     this.colaboradorService.getColaboradores().subscribe({
       next: (data) => this.listaColaboradores = data,
-      error: (err) => console.error('Erro ao carregar colaboradores:', err)
+      error: (err) => console.error(err)
     });
   }
 
-  onSubmit(): void {
-    this.limparFeedback();
-
-    // Validação adicional
-    if (!this.validarFormulario()) {
-      return;
-    }
-
-    // Preparar dados para envio
-    const dadosParaEnviar = this.prepararDadosParaEnviar();
-
-    if (this.idColaboradorEmEdicao) {
-      this.colaboradorService.atualizarColaborador(this.idColaboradorEmEdicao, dadosParaEnviar).subscribe({
-        next: (res) => {
-          this.mostrarFeedback(res.message || 'Atualizado com sucesso!', false);
-          this.carregarColaboradores();
-          this.fecharModal();
-        },
-        error: (err) => this.tratarErro(err)
-      });
-    } else {
-      this.colaboradorService.criarColaborador(dadosParaEnviar).subscribe({
-        next: (res) => {
-          this.mostrarFeedback(res.message || 'Criado com sucesso!', false);
-          this.carregarColaboradores();
-          this.fecharModal();
-        },
-        error: (err) => this.tratarErro(err)
-      });
-    }
-  }
+  // --- AÇÕES DO FORMULÁRIO ---
 
   abrirModalNovo(): void {
     this.idColaboradorEmEdicao = null;
-    this.dadosFormulario = this.criarFormularioVazio();
+    this.limparFeedback();
+    this.colaboradorForm.reset(); // Limpa o formulário
 
-    // Para GestorRH, preencher automaticamente a instituição
+    // Define valores padrão
+    this.colaboradorForm.patchValue({
+      dataAdmissao: new Date().toISOString().split('T')[0]
+    });
+
+    // Se for GestorRH, volta a forçar o ID da instituição
     if (this.loggedInUserRole === 'GestorRH') {
-      const instituicaoId = this.authService.getInstituicaoId();
-      const instituicaoNome = this.authService.getInstituicaoNome();
-
-      if (instituicaoId && instituicaoNome) {
-        this.dadosFormulario.instituicaoId = instituicaoId;
-        this.nomeInstituicaoGestor = instituicaoNome;
-        console.log('Instituição vinculada no modal:', instituicaoNome, 'ID:', instituicaoId);
-      } else {
-        this.mostrarFeedback('Erro: Não foi possível identificar a sua instituição. Faça login novamente.', true);
-        // Não abrir o modal se não houver instituição
-        return;
-      }
+      const instId = this.authService.getInstituicaoId();
+      if(instId) this.colaboradorForm.patchValue({ instituicaoId: instId });
     }
 
     this.isModalAberto = true;
@@ -146,36 +121,72 @@ export class GestaoColaboradores implements OnInit {
     this.limparFeedback();
     this.idColaboradorEmEdicao = colaborador.id;
 
+    // Buscar detalhes completos à API para preencher o form
     this.colaboradorService.getColaboradorById(colaborador.id).subscribe({
       next: (data) => {
-        this.dadosFormulario = {
+        // O patchValue preenche automaticamente os campos que têm o mesmo nome
+        this.colaboradorForm.patchValue({
           nomeCompleto: data.nomeCompleto,
+          emailPessoal: data.emailPessoal, // Atenção: no DTO pode vir como 'email' ou 'emailPessoal'
           nif: data.nif,
+          instituicaoId: data.instituicaoId,
           numeroAgente: data.numeroAgente,
-          emailPessoal: data.emailPessoal,
-          telemovel: data.telemovel ? Number(data.telemovel) : null,
-          morada: data.morada || '',
-          iban: data.iban || '',
+          telemovel: data.telemovel,
+          morada: data.morada,
+          iban: data.iban,
           dataNascimento: data.dataNascimento ? data.dataNascimento.split('T')[0] : null,
-          dataAdmissao: data.dataAdmissao.split('T')[0],
+          dataAdmissao: data.dataAdmissao ? data.dataAdmissao.split('T')[0] : '',
           cargo: data.cargo,
           tipoContrato: data.tipoContrato,
           salarioBase: data.salarioBase,
           departamento: data.departamento,
-          localizacao: data.localizacao,
-          instituicaoId: data.instituicaoId
-        };
-
-        // Para GestorRH, também mostrar o nome da instituição
-        if (this.loggedInUserRole === 'GestorRH') {
-          this.nomeInstituicaoGestor = this.authService.getInstituicaoNome() || '';
-        }
-
+          localizacao: data.localizacao
+        });
         this.isModalAberto = true;
       },
-      error: (err) => this.mostrarFeedback('Erro ao carregar dados.', true)
+      error: () => this.mostrarFeedback('Erro ao carregar detalhes do colaborador.', true)
     });
   }
+
+  onSubmit(): void {
+    this.limparFeedback();
+
+    if (this.colaboradorForm.invalid) {
+      // Marca todos os campos como "tocados" para mostrar os erros no HTML
+      this.colaboradorForm.markAllAsTouched();
+      this.mostrarFeedback('Por favor, corrija os erros no formulário.', true);
+      return;
+    }
+
+    const dadosParaEnviar = this.colaboradorForm.value;
+
+    // Garantia extra para GestorRH
+    if (this.loggedInUserRole === 'GestorRH') {
+        dadosParaEnviar.instituicaoId = this.authService.getInstituicaoId();
+    }
+
+    if (this.idColaboradorEmEdicao) {
+      this.colaboradorService.atualizarColaborador(this.idColaboradorEmEdicao, dadosParaEnviar).subscribe({
+        next: (res) => {
+          this.mostrarFeedback('Atualizado com sucesso!', false);
+          this.carregarColaboradores();
+          this.fecharModal();
+        },
+        error: (err) => this.tratarErro(err)
+      });
+    } else {
+      this.colaboradorService.criarColaborador(dadosParaEnviar).subscribe({
+        next: (res) => {
+          this.mostrarFeedback('Criado com sucesso!', false);
+          this.carregarColaboradores();
+          this.fecharModal();
+        },
+        error: (err) => this.tratarErro(err)
+      });
+    }
+  }
+
+  // --- AÇÕES DE LISTAGEM ---
 
   selecionarParaDeletar(colaborador: Colaborador): void {
     if (!confirm(`Eliminar "${colaborador.nomeCompleto}"?`)) return;
@@ -191,7 +202,7 @@ export class GestaoColaboradores implements OnInit {
 
   mudarEstado(colaborador: Colaborador): void {
     const acao = colaborador.isAtivo ? "desativar" : "reativar";
-    if (!confirm(`${acao} "${colaborador.nomeCompleto}"?`)) return;
+    if (!confirm(`${acao} "${colaborador.nomeCompleto}"?`)) return; // Mensagem corrigida
 
     this.colaboradorService.atualizarEstadoColaborador(colaborador.id, !colaborador.isAtivo).subscribe({
       next: () => {
@@ -205,90 +216,13 @@ export class GestaoColaboradores implements OnInit {
   fecharModal(): void {
     this.isModalAberto = false;
     this.idColaboradorEmEdicao = null;
-    this.limparFeedback();
+    this.colaboradorForm.reset();
   }
 
-  // --- Novos métodos auxiliares ---
-
-  private validarFormulario(): boolean {
-    // Validação básica
-    if (!this.dadosFormulario.nomeCompleto || !this.dadosFormulario.emailPessoal || !this.dadosFormulario.nif) {
-      this.mostrarFeedback('Por favor, preencha os campos obrigatórios: Nome, Email e NIF.', true);
-      return false;
-    }
-
-    // Validação da instituição
-    if (!this.dadosFormulario.instituicaoId) {
-      this.mostrarFeedback('É necessário selecionar uma instituição.', true);
-      return false;
-    }
-
-    // Validação do NIF (9 dígitos)
-    if (!/^\d{9}$/.test(this.dadosFormulario.nif)) {
-      this.mostrarFeedback('O NIF deve conter exatamente 9 dígitos.', true);
-      return false;
-    }
-
-    return true;
-  }
-
-  private prepararDadosParaEnviar(): any {
-    const dados = { ...this.dadosFormulario };
-
-    // Converter tipos e limpar dados
-    if (dados.telemovel === null || dados.telemovel === undefined) {
-      dados.telemovel = null;
-    } else {
-      dados.telemovel = Number(dados.telemovel);
-    }
-
-    if (dados.salarioBase === null || dados.salarioBase === undefined) {
-      dados.salarioBase = null;
-    } else {
-      dados.salarioBase = Number(dados.salarioBase);
-    }
-
-    // Garantir que a instituição está definida para GestorRH
-    if (this.loggedInUserRole === 'GestorRH' && !dados.instituicaoId) {
-      dados.instituicaoId = this.authService.getInstituicaoId();
-    }
-
-    return dados;
-  }
-
-  private criarFormularioVazio(): CriarColaboradorRequest {
-    const formularioVazio = {
-      nomeCompleto: '',
-      nif: '',
-      numeroAgente: null,
-      emailPessoal: '',
-      morada: '',
-      telemovel: null,
-      iban: '',
-      dataNascimento: null,
-      dataAdmissao: new Date().toISOString().split('T')[0],
-      cargo: '',
-      tipoContrato: '',
-      salarioBase: null,
-      departamento: '',
-      localizacao: '',
-      instituicaoId: '',
-    };
-
-    // Para GestorRH, já definir a instituição inicial
-    if (this.loggedInUserRole === 'GestorRH') {
-      const instituicaoId = this.authService.getInstituicaoId();
-      if (instituicaoId) {
-        formularioVazio.instituicaoId = instituicaoId;
-      }
-    }
-
-    return formularioVazio;
-  }
+  // --- AUXILIARES ---
 
   private tratarErro(err: any) {
     const msg = err.error?.message || 'Ocorreu um erro.';
-    // Se for erro de validação (400), muitas vezes vem em err.error.errors
     if (err.error?.errors) {
       const errors = Object.values(err.error.errors).flat();
       this.mostrarFeedback(errors.join(', '), true);
@@ -300,6 +234,8 @@ export class GestaoColaboradores implements OnInit {
   private mostrarFeedback(mensagem: string, ehErro: boolean): void {
     this.feedbackMessage = mensagem;
     this.isError = ehErro;
+    // Opcional: limpar mensagem após 5 segundos
+    setTimeout(() => this.feedbackMessage = null, 5000);
   }
 
   private limparFeedback(): void {

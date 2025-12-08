@@ -78,16 +78,36 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="nome" class="block text-sm font-medium text-gray-700">Nome da Instituição</label>
-            <input type="text" id="nome" name="nome" required [(ngModel)]="dadosFormulario.nome"
+            <input type="text" id="nome" name="nome" required [(ngModel)]="dadosFormulario.nome" (input)="gerarIdentificador()"
               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
           </div>
           <div>
-            <label for="identificador" class="block text-sm font-medium text-gray-700">Identificador Único(Slug)</label>
-            <input type="text" id="identificador" name="identificador" required
-              [(ngModel)]="dadosFormulario.identificadorUnico"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="ex: minha-empresa-1">
-            <p class="text-xs text-gray-500 mt-1">Apenas letras minúsculas, números e hífenes.</p>
+            <label for="identificadorUnico" class="block text-sm font-medium text-gray-700">Identificador Único (Slug)</label>
+            <input type="text" name="slug" [(ngModel)]="dadosFormulario.identificadorUnico" required
+              placeholder="EX: EMPRESA-X-LDA" pattern="^[A-Z0-9-]+$" title="Apenas letras maiúsculas, números e hifens"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <p class="text-xs text-gray-500">Usado para identificar a empresa no sistema (URL).</p>
+          </div>
+          <div>
+            <label for="nif" class="block text-sm font-medium text-gray-700">NIF</label>
+            <input type="text" id="nif" name="nif" required [(ngModel)]="dadosFormulario.nif"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label for="endereco" class="block text-sm font-medium text-gray-700">Endereço</label>
+            <input type="text" id="endereco" name="endereco" required [(ngModel)]="dadosFormulario.endereco"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label for="telemovel" class="block text-sm font-medium text-gray-700">Telefone</label>
+            <input type="text" id="telemovel" name="telemovel" required [(ngModel)]="dadosFormulario.telemovel"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label for="emailContato" class="block text-sm font-medium text-gray-700">Email de Contato</label>
+            <input type="email" id="emailContato" name="emailContato" required
+              [(ngModel)]="dadosFormulario.emailContato"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
           </div>
         </div>
 

@@ -1,19 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-
-// Adicionei estas interfaces para melhorar a tipagem
-export interface Instituicao {
-  id: string; // O backend usa Guid, mas no TS/JSON é uma string
-  nome: string;
-  identificadorUnico: string;
-  isAtiva: boolean;
-}
-
-export interface CriarInstituicaoRequest {
-  nome: string;
-  identificadorUnico: string;
-}
+import { CriarInstituicaoRequest } from '../interfaces/criarInstituicaoRequest';
+import { Instituicao } from '../interfaces/instituicao';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -21,7 +11,8 @@ export interface CriarInstituicaoRequest {
 export class InstituicaoService {
   // O URL da nossa API.
   // Certifique-se de que a porta (ex: 5003) corresponde à que o seu backend está a usar.
-  private apiUrl = 'https://localhost:7234/api/Instituicoes';
+  // private apiUrl = 'https://localhost:7234/api/Instituicoes';
+  private apiUrl = `${environment.apiUrl}/Instituicoes`;
 
   constructor(private http: HttpClient) { }
 

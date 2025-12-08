@@ -1,4 +1,5 @@
-﻿using HRManager.Application.Interfaces;
+﻿using ClosedXML.Excel;
+using HRManager.Application.Interfaces;
 using HRManager.WebAPI.Domain.enums;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
@@ -203,7 +204,6 @@ namespace HRManager.WebAPI.Services
                     int dias = (ausencia.DataFim - ausencia.DataInicio).Days + 1;
                     if (ausencia.Colaborador.SaldoFerias < dias)
                         throw new ValidationException("Não é possível aprovar: Saldo insuficiente.");
-
                     // Atualizar Saldo
                     ausencia.Colaborador.SaldoFerias -= dias;
                 }
@@ -213,7 +213,6 @@ namespace HRManager.WebAPI.Services
             {
                 if (string.IsNullOrWhiteSpace(request.Comentario))
                     throw new ValidationException("Justificativa obrigatória para rejeição.");
-
                 ausencia.Estado = EstadoAusencia.Rejeitada;
             }
 
@@ -221,15 +220,85 @@ namespace HRManager.WebAPI.Services
             ausencia.DataResposta = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-
             // Notificações e Email
             await EnviarNotificacoesResposta(ausencia, request.Aprovado, request.Comentario);
         }
 
-        public Task<byte[]> DownloadRelatorioExcelAsync(int mes, int ano)
+        // --- IMPLEMENTAÇÃO DO EXCEL ---
+        public async Task<byte[]> DownloadRelatorioExcelAsync(int mes, int ano)
         {
-            // Implementação futura ou mover lógica do RelatoriosController para aqui
-            throw new NotImplementedException();
+            // 1. Construir a Query
+            var query = _context.Ausencias
+                .Include(a => a.Colaborador)
+                .AsQueryable();
+
+            // 2. Filtro de Data
+            query = query.Where(a => a.DataInicio.Month == mes && a.DataInicio.Year == ano);
+
+            // 3. Filtro de Multi-tenancy (Segurança)
+            // O TenantService já lê o ID do utilizador logado através do Token
+            var tenantId = _tenantService.GetTenantId();
+            if (tenantId.HasValue)
+            {
+                query = query.Where(a => a.Colaborador.InstituicaoId == tenantId.Value);
+            }
+
+            // 4. Buscar dados
+            var dados = await query
+                .OrderBy(a => a.DataInicio)
+                .ToListAsync();
+
+            // 5. Gerar o Excel em memória
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Ausências");
+
+                // Cabeçalhos
+                worksheet.Cell(1, 1).Value = "Colaborador";
+                worksheet.Cell(1, 2).Value = "NIF";
+                worksheet.Cell(1, 3).Value = "Tipo";
+                worksheet.Cell(1, 4).Value = "Início";
+                worksheet.Cell(1, 5).Value = "Fim";
+                worksheet.Cell(1, 6).Value = "Duração (Dias)";
+                worksheet.Cell(1, 7).Value = "Estado";
+                worksheet.Cell(1, 8).Value = "Motivo";
+
+                // Estilo
+                var headerRange = worksheet.Range("A1:H1");
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+
+                int row = 2;
+                foreach (var item in dados)
+                {
+                    worksheet.Cell(row, 1).Value = item.Colaborador.NomeCompleto;
+                    worksheet.Cell(row, 2).Value = "'" + item.Colaborador.NIF; // Aspa para forçar texto
+                    worksheet.Cell(row, 3).Value = item.Tipo.ToString();
+                    worksheet.Cell(row, 4).Value = item.DataInicio;
+                    worksheet.Cell(row, 5).Value = item.DataFim;
+                    worksheet.Cell(row, 6).Value = (item.DataFim - item.DataInicio).Days + 1;
+                    worksheet.Cell(row, 7).Value = item.Estado.ToString();
+                    worksheet.Cell(row, 8).Value = item.Motivo;
+
+                    // Formatação condicional simples
+                    if (item.Estado == EstadoAusencia.Aprovada)
+                        worksheet.Cell(row, 7).Style.Font.FontColor = XLColor.Green;
+                    else if (item.Estado == EstadoAusencia.Rejeitada)
+                        worksheet.Cell(row, 7).Style.Font.FontColor = XLColor.Red;
+                    else
+                        worksheet.Cell(row, 7).Style.Font.FontColor = XLColor.Orange;
+
+                    row++;
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
+            }
         }
 
         // --- Helpers Privados ---

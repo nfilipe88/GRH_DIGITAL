@@ -1,10 +1,11 @@
 ﻿using HRManager.WebAPI.Domain.enums;
+using HRManager.WebAPI.Domain.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace HRManager.WebAPI.Models
 {
-    public class Avaliacao
+    public class Avaliacao: IHaveTenant
     {
         [Key]
         public int Id { get; set; }
@@ -19,6 +20,8 @@ namespace HRManager.WebAPI.Models
         public int GestorId { get; set; } // Quem vai avaliar (geralmente o utilizador GestorRH)
         // Nota: Como o Gestor é um User e não um Colaborador no nosso sistema atual, 
         // guardamos o ID, mas a navegação pode ser complexa se não mapearmos User.
+        public Guid InstituicaoId { get; set; }
+        public virtual Instituicao Instituicao { get; set; }
 
         // --- Estado ---
         [JsonConverter(typeof(JsonStringEnumConverter))]

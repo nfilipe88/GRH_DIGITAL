@@ -12,15 +12,9 @@ namespace HRManager.WebAPI.Models
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-
-        // MUDANÇA AQUI: De byte[] para string
         public string PasswordHash { get; set; } = string.Empty;
-
-        // Se tiver PasswordSalt, pode REMOVER. O BCrypt não precisa de coluna separada para salt.
-        // public byte[] PasswordSalt { get; set; } 
-
         public string Role { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = true;
+        public bool IsAtivo { get; set; } = true;
 
         // Assumindo que o User tem ligação à Instituição (Multi-tenant)
         public Guid? InstituicaoId { get; set; }

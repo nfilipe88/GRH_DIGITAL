@@ -49,6 +49,11 @@ export const routes: Routes = [
       { path: 'emissao-declaracoes', component: EmissaoDeclaracoes },
       { path: 'avaliacoes/realizar/:id', component: RealizarAvaliacao },
       { path: 'avaliacoes/minha-equipa', component: ListaAvaliacao },
+      {
+        path: 'minhas-avaliacoes',
+        loadComponent: () => import('./pages/minhas-avaliacoes/minhas-avaliacoes').then(m => m.MinhasAvaliacoes),
+        canActivate: [authGuard] // Acessível a todos os perfis logados
+      },
     ],
   },
 

@@ -50,31 +50,34 @@ namespace HRManager.WebAPI.Services
 
         public async Task<AvaliacaoDto> IniciarAvaliacaoAsync(int colaboradorId, int cicloId, string emailGestor)
         {
-            // 1. Validar se já existe
+            // Validar existência
             var existe = await _context.Avaliacoes
                 .AnyAsync(a => a.ColaboradorId == colaboradorId && a.CicloId == cicloId);
-
             if (existe) throw new ValidationException("Este colaborador já tem uma avaliação neste ciclo.");
 
+            // Obter Gestor e Colaborador (para saber a Instituição)
             var gestor = await _context.Users.FirstAsync(u => u.Email == emailGestor);
+            var colaborador = await _context.Colaboradores.FindAsync(colaboradorId);
+            
+            if (colaborador == null) throw new KeyNotFoundException("Colaborador não encontrado.");
 
-            // 2. Criar a "Capa" da Avaliação
             var novaAvaliacao = new Avaliacao
             {
                 ColaboradorId = colaboradorId,
                 CicloId = cicloId,
                 GestorId = gestor.Id,
+                InstituicaoId = colaborador.InstituicaoId, // <--- GARANTIR SEGURANÇA
                 Estado = EstadoAvaliacao.NaoIniciada,
                 DataCriacao = DateTime.UtcNow
             };
 
-            // 3. Copiar as Competências do Modelo para Itens de Avaliação
-            // (Assumindo que temos uma tabela Competencias com as perguntas padrão)
+            // Copiar competências ativas da instituição (se houver filtro) ou gerais
             var competencias = await _context.Competencias.Where(c => c.IsAtiva).ToListAsync();
+            
             novaAvaliacao.Itens = competencias.Select(c => new AvaliacaoItem
             {
                 CompetenciaId = c.Id,
-                // Notas começam a null
+                // Notas a null inicialmente
             }).ToList();
 
             _context.Avaliacoes.Add(novaAvaliacao);
@@ -92,37 +95,37 @@ namespace HRManager.WebAPI.Services
 
             if (avaliacao == null) throw new KeyNotFoundException("Avaliação não encontrada.");
 
-            // TODO: Validar se quem está a submeter é o Gestor ou o Colaborador (Autoavaliação)
-            // Para simplificar, assumimos fluxo do Gestor aqui:
-
             foreach (var resposta in request.Respostas)
             {
                 var item = avaliacao.Itens.FirstOrDefault(i => i.Id == resposta.ItemId);
                 if (item != null)
                 {
                     item.NotaGestor = resposta.Nota;
-                    //item.ComentarioGestor = resposta.Comentario;
+                    // CORREÇÃO: Descomentar para salvar o comentário
+                    item.JustificativaGestor = resposta.Comentario; 
                 }
             }
 
             if (request.Finalizar)
             {
                 // Calcular Média
+                var count = avaliacao.Itens.Count(i => i.NotaGestor.HasValue && i.NotaGestor > 0);
                 var soma = avaliacao.Itens.Sum(i => i.NotaGestor ?? 0);
-                var count = avaliacao.Itens.Count(i => i.NotaGestor.HasValue);
 
                 if (count > 0)
                     avaliacao.MediaFinal = (decimal)soma / count;
+                else 
+                    avaliacao.MediaFinal = 0;
 
-                avaliacao.Estado = EstadoAvaliacao.Finalizada; // ou AguardandoFeedback
+                avaliacao.Estado = EstadoAvaliacao.Finalizada; // Assumindo enum 'Concluida' ou 'Finalizada'
                 avaliacao.DataConclusao = DateTime.UtcNow;
                 avaliacao.ComentarioFinalGestor = request.ComentarioFinal;
 
-                // Notificar Colaborador
+                // Notificar
                 await _notificationService.NotifyUserByEmailAsync(
                     avaliacao.Colaborador.EmailPessoal,
                     "Avaliação Concluída",
-                    "O seu gestor finalizou a sua avaliação. Aceda para ver o resultado.",
+                    "A sua avaliação de desempenho foi finalizada.",
                     "/minhas-avaliacoes");
             }
             else
@@ -134,10 +137,38 @@ namespace HRManager.WebAPI.Services
             return MapToDto(avaliacao);
         }
 
-        // ... Implementar restantes métodos ...
-        public Task<decimal> CalcularMediaFinalAsync(int avaliacaoId) => throw new NotImplementedException();
-        public Task<List<AvaliacaoDto>> GetMinhasAvaliacoesAsync(string emailColaborador) => throw new NotImplementedException();
-        public Task<CicloAvaliacaoDto> CriarCicloAsync(CriarCicloRequest request) => throw new NotImplementedException();
+        // --- IMPLEMENTAÇÃO DOS MÉTODOS EM FALTA ---
+
+        public async Task<List<AvaliacaoDto>> GetMinhasAvaliacoesAsync(string emailColaborador)
+        {
+            var colaborador = await _context.Colaboradores.FirstOrDefaultAsync(c => c.EmailPessoal == emailColaborador);
+            if (colaborador == null) return new List<AvaliacaoDto>();
+
+            return await _context.Avaliacoes
+                .Include(a => a.Ciclo)
+                .Include(a => a.Itens)
+                .Where(a => a.ColaboradorId == colaborador.Id && a.Estado == EstadoAvaliacao.Finalizada) // Só vê concluídas?
+                .Select(a => MapToDto(a))
+                .ToListAsync();
+        }
+
+        // Método auxiliar não exposto na interface, mas útil se precisarmos recalcular
+        public async Task<decimal> CalcularMediaFinalAsync(int avaliacaoId)
+        {
+             var avaliacao = await _context.Avaliacoes.Include(a => a.Itens).FirstOrDefaultAsync(a => a.Id == avaliacaoId);
+             if (avaliacao == null) return 0;
+             
+             var count = avaliacao.Itens.Count(i => i.NotaGestor.HasValue);
+             if (count == 0) return 0;
+             
+             return (decimal)avaliacao.Itens.Sum(i => i.NotaGestor ?? 0) / count;
+        }
+
+        public Task<CicloAvaliacaoDto> CriarCicloAsync(CriarCicloRequest request)
+        {
+             // Implementação futura para criar ciclos via API
+             throw new NotImplementedException(); 
+        }
 
         // Helper
         private static AvaliacaoDto MapToDto(Avaliacao a)
@@ -146,15 +177,15 @@ namespace HRManager.WebAPI.Services
             {
                 Id = a.Id,
                 NomeColaborador = a.Colaborador?.NomeCompleto ?? "N/A",
-                NomeCiclo = a.Ciclo?.Nome ?? "N/A",
+                NomeCiclo = a.Ciclo?.Nome ?? "N/A", // Verifique se é .Nome ou .Descricao
                 Estado = a.Estado,
                 NotaFinal = a.MediaFinal,
                 Itens = a.Itens?.Select(i => new AvaliacaoItemDto
                 {
                     Id = i.Id,
                     CompetenciaId = i.CompetenciaId,
-                    NotaGestor = i.NotaGestor
-                    // Mapear restantes campos...
+                    NotaGestor = i.NotaGestor,
+                    Comentario = i.JustificativaGestor // Adicionar mapeamento do comentário
                 }).ToList() ?? new List<AvaliacaoItemDto>()
             };
         }

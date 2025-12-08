@@ -3,13 +3,15 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CriarPedidoDeclaracaoRequest } from '../interfaces/criarPedidoDeclarcaoRequest';
 import { PedidoDeclaracaoDto } from '../interfaces/pedidoDeclaracao';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DeclaracaoService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://localhost:7234/api/Declaracoes'; // Confirme a porta
+  // private apiUrl = 'https://localhost:7234/api/Declaracoes'; // Confirme a porta
+  private apiUrl = `${environment.apiUrl}/Declaracoes`;
 
   /**
    * Lista pedidos (filtrados pelo backend com base no cargo)
@@ -31,16 +33,19 @@ export class DeclaracaoService {
    * @param documento Ficheiro PDF assinado (obrigatório para aprovar)
    * @param rejeitar Se true, rejeita o pedido (documento é ignorado)
    */
-  public resolver(id: number, documento: File | null, rejeitar: boolean = false): Observable<any> {
-    const formData = new FormData();
+  public resolver(id: number, ficheiro: File | null, rejeitar: boolean= false): Observable<any> {
 
-    if (documento) {
-      formData.append('documento', documento);
+    // Se for rejeição, basta mandar o flag na Query String
+    if (rejeitar) {
+      return this.http.put(`${this.apiUrl}/${id}/resolver?rejeitar=true`, {});
     }
 
-    // Adicionamos a query string para indicar se é rejeição
-    const url = `${this.apiUrl}/${id}/resolver?rejeitar=${rejeitar}`;
+    // Se for aprovação, temos de enviar o ficheiro via FormData
+    const formData = new FormData();
+    if (ficheiro) {
+      formData.append('documento', ficheiro); // 'documento' deve bater certo com [FromForm] IFormFile documento no Controller
+    }
 
-    return this.http.put(url, formData);
+    return this.http.put(`${this.apiUrl}/${id}/resolver?rejeitar=false`, formData);
   }
 }

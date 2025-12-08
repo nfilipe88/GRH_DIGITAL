@@ -23,5 +23,6 @@ namespace HRManager.WebAPI.Models
         public bool Lida { get; set; } = false;
 
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
+        public Guid InstituicaoId { get; internal set; }
     }
 }

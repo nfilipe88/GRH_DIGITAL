@@ -393,7 +393,7 @@ namespace HRManager.WebAPI.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("Telefone")
+                    b.Property<int>("Telemovel")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

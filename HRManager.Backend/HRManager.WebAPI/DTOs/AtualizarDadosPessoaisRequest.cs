@@ -11,6 +11,6 @@ namespace HRManager.WebAPI.DTOs
         public string? IBAN { get; set; }
         public int Telemovel { get; set; }
 
-        // No futuro, podemos adicionar "Contacto de Emergência", "Telefone", etc.
+        // No futuro, podemos adicionar "Contacto de Emergência", "Telemovel", etc.
     }
 }

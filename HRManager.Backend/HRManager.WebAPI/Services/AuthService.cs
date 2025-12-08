@@ -34,7 +34,7 @@ namespace HRManager.WebAPI.Services
             if (!senhaValida)
                 throw new ValidationException("Email ou senha inválidos.");
 
-            if (!user.IsActive)
+            if (!user.IsAtivo)
                 throw new ValidationException("Conta inativa. Contacte o administrador.");
 
             // 3. Gerar Token (CORREÇÃO: Passar InstituicaoId)
@@ -58,7 +58,7 @@ namespace HRManager.WebAPI.Services
                 Email = request.Email,
                 PasswordHash = passwordHash,
                 Role = request.Role,
-                IsActive = true
+                IsAtivo = true
                 // InstituicaoId: Lógica de atribuição depende do contexto (quem está a criar?)
             };
 
@@ -91,7 +91,7 @@ namespace HRManager.WebAPI.Services
                 Email = user.Email,
                 Cargo = user.Role, // Mapear Role para Cargo ou ter campo separado
                 InstituicaoNome = user.Instituicao?.Nome ?? "N/A",
-                IsActive = user.IsActive
+                IsAtivo = user.IsAtivo
                 // Adicione outros campos conforme necessário no DTO
             };
         }

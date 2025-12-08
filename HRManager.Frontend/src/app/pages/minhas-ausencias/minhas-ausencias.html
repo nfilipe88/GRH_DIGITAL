@@ -1,19 +1,16 @@
 <div class="container mx-auto p-8">
 
-  @if (feedbackMessage) {
-  <div [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" class="p-4 rounded mb-4">
+  <div *ngIf="feedbackMessage" class="p-4 rounded mb-4"
+    [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
     {{ feedbackMessage }}
   </div>
-  }
 
-  @if (saldoInfo) {
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-
+  <div *ngIf="saldoInfo" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
       <h3 class="text-sm font-medium text-gray-500 uppercase">Saldo de Férias</h3>
       <div class="mt-2 flex items-baseline">
         <span class="text-3xl font-bold text-gray-900">{{ saldoInfo.saldoFerias }}</span>
-        <span class="ml-2 text-sm text-gray-500">dias disponíveis</span>
+        <span class="ml-2 text-sm text-gray-500">dias</span>
       </div>
     </div>
 
@@ -21,19 +18,15 @@
       <h3 class="text-sm font-medium text-gray-500 uppercase">Em Análise</h3>
       <div class="mt-2 flex items-baseline">
         <span class="text-3xl font-bold text-gray-900">{{ saldoInfo.diasPendentes }}</span>
-        <span class="ml-2 text-sm text-gray-500">dias aguardam aprovação</span>
+        <span class="ml-2 text-sm text-gray-500">dias</span>
       </div>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-gray-300 flex items-center">
-      <div>
-        <h3 class="text-sm font-medium text-gray-500 uppercase">Colaborador</h3>
-        <p class="mt-1 text-lg font-semibold text-gray-900">{{ saldoInfo.nomeColaborador }}</p>
-      </div>
+    <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-gray-300">
+      <h3 class="text-sm font-medium text-gray-500 uppercase">Colaborador</h3>
+      <p class="mt-1 text-lg font-semibold text-gray-900">{{ saldoInfo.nomeColaborador }}</p>
     </div>
-
   </div>
-  }
 
   <div class="bg-white p-6 rounded-lg shadow-md">
     <div class="flex justify-between items-center mb-4">
@@ -48,19 +41,17 @@
         <tr>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datas</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duração</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Anexos</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200">
-        @for (item of listaAusencias; track item.id) {
-        <tr>
+        <tr *ngFor="let item of listaAusencias">
           <td class="px-6 py-4">{{ item.tipo }}</td>
           <td class="px-6 py-4 text-sm text-gray-500">
-            {{ item.dataInicio | date:'dd/MM/yyyy' }} a {{ item.dataFim | date:'dd/MM/yyyy' }}
+            {{ item.dataInicio | date:'dd/MM' }} a {{ item.dataFim | date:'dd/MM/yyyy' }}
+            <span class="text-xs text-gray-400 block">({{ item.diasTotal }} dias)</span>
           </td>
-          <td class="px-6 py-4">{{ item.diasTotal }} dias</td>
           <td class="px-6 py-4">
             <span [ngClass]="{
                 'bg-yellow-100 text-yellow-800': item.estado === 'Pendente',
@@ -70,48 +61,27 @@
               {{ item.estado }}
             </span>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm">
-            @if (item.caminhoDocumento) {
-            <a [href]="getDocumentoUrl(item.caminhoDocumento)" target="_blank"
-              class="text-blue-600 hover:text-blue-900 font-medium underline flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-              </svg>
-              Ver
+          <td class="px-6 py-4 text-sm">
+            <a *ngIf="item.caminhoDocumento" [href]="getDocumentoUrl(item.caminhoDocumento)" target="_blank"
+              class="text-blue-600 hover:underline flex items-center gap-1">
+              Ver Documento
             </a>
-            } @else {
-            <span class="text-gray-400">--</span>
-            }
+            <span *ngIf="!item.caminhoDocumento" class="text-gray-400">-</span>
           </td>
         </tr>
-        } @empty {
-        <tr>
-          <td colspan="4" class="text-center py-4 text-gray-500">Sem histórico.</td>
-        </tr>
-        }
       </tbody>
     </table>
   </div>
 
-  @if (isModalAberto) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" (click)="fecharModal()"></div>
-
-    <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-md">
+  <div *ngIf="isModalAberto" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
       <h2 class="text-xl font-bold mb-4">Solicitar Ausência</h2>
 
-      @if (feedbackModal) {
-      <div class="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded">
-        {{ feedbackModal }}
-      </div>
-      }
+      <form [formGroup]="ausenciaForm" (ngSubmit)="onSubmit()" class="space-y-4">
 
-      <form (ngSubmit)="onSubmit()" #form="ngForm" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium">Tipo de Ausência</label>
-          <select [(ngModel)]="dadosFormulario.tipo" name="tipo" class="w-full mt-1 p-2 border rounded">
+          <label class="block text-sm font-medium">Tipo</label>
+          <select formControlName="tipo" class="w-full mt-1 p-2 border rounded">
             <option value="Ferias">Férias</option>
             <option value="Doenca">Doença</option>
             <option value="Justificada">Justificada</option>
@@ -122,38 +92,36 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium">Início</label>
-            <input type="date" [(ngModel)]="dadosFormulario.dataInicio" name="inicio" required
-              class="w-full mt-1 p-2 border rounded">
+            <input type="date" formControlName="dataInicio" class="w-full mt-1 p-2 border rounded">
           </div>
           <div>
             <label class="block text-sm font-medium">Fim</label>
-            <input type="date" [(ngModel)]="dadosFormulario.dataFim" name="fim" required
-              class="w-full mt-1 p-2 border rounded">
+            <input type="date" formControlName="dataFim" class="w-full mt-1 p-2 border rounded">
           </div>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Comprovativo (PDF ou Imagem)</label>
-          <input type="file" (change)="onFileSelected($event)" accept=".pdf,.jpg,.jpeg,.png" class="mt-1 block w-full text-sm text-gray-500
-                          file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700
-                          hover:file:bg-blue-100">
-          <p class="text-xs text-gray-500 mt-1">Opcional, mas recomendado para baixas médicas.</p>
+        <div *ngIf="ausenciaForm.errors?.['datasInvalidas']" class="text-red-600 text-xs">
+          A data de fim deve ser superior à de início.
         </div>
 
         <div>
-          <label class="block text-sm font-medium">Motivo (Opcional)</label>
-          <textarea [(ngModel)]="dadosFormulario.motivo" name="motivo" rows="2"
-            class="w-full mt-1 p-2 border rounded"></textarea>
+          <label class="block text-sm font-medium">Comprovativo</label>
+          <input type="file" (change)="onFileSelected($event)" class="mt-1 block w-full text-sm text-gray-500 border rounded">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Motivo</label>
+          <textarea formControlName="motivo" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
         </div>
 
         <div class="flex justify-end gap-2 mt-4">
-          <button type="button" (click)="fecharModal()"
-            class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
-          <button type="submit" [disabled]="!form.valid"
-            class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50">Submeter</button>
+          <button type="button" (click)="fecharModal()" class="px-4 py-2 text-gray-700 bg-gray-200 rounded">Cancelar</button>
+          <button type="submit" [disabled]="ausenciaForm.invalid"
+            class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50">
+            Submeter
+          </button>
         </div>
       </form>
     </div>
   </div>
-  }
 </div>

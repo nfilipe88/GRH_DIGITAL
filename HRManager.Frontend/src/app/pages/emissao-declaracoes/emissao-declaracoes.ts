@@ -15,7 +15,8 @@ export class EmissaoDeclaracoes implements OnInit {
   private declaracaoService = inject(DeclaracaoService);
   private readonly API_BASE_URL = 'https://localhost:7234';
 
-  public listaPedidos: PedidoDeclaracaoDto[] = [];
+  public listaPedidos: any[] = [];
+  loading = true;
 
   // Estado do Modal de Upload
   public isModalUploadAberto = false;
@@ -27,12 +28,20 @@ export class EmissaoDeclaracoes implements OnInit {
   }
 
   carregarPedidos() {
+    this.loading = true;
     this.declaracaoService.getPedidos().subscribe({
-      next: (data) => this.listaPedidos = data,
+      next: (data) => {
+        this.listaPedidos = data;
+        this.loading = false;
+      },
       error: (err) => console.error(err)
     });
   }
 
+
+  getDocumentoUrl(caminho: string): string {
+      return `${this.API_BASE_URL}/${caminho}`;
+  }
   // --- Ações ---
 
   abrirModalUpload(pedido: PedidoDeclaracaoDto) {
@@ -41,19 +50,11 @@ export class EmissaoDeclaracoes implements OnInit {
     this.isModalUploadAberto = true;
   }
 
-  rejeitar(pedido: PedidoDeclaracaoDto) {
-    if (!confirm(`Rejeitar o pedido de ${pedido.nomeColaborador}?`)) return;
-
-    this.declaracaoService.resolver(pedido.id, null, true).subscribe({
-      next: () => {
-        alert('Pedido rejeitado.');
-        this.carregarPedidos();
-      }
-    });
-  }
-
   onFileSelected(event: any) {
-    this.ficheiroSelecionado = event.target.files[0];
+    const file = event.target.files[0];
+    if (file) {
+      this.ficheiroSelecionado = file;
+    }
   }
 
   confirmarUpload() {
@@ -69,7 +70,17 @@ export class EmissaoDeclaracoes implements OnInit {
     });
   }
 
-  getDocumentoUrl(caminho: string): string {
-      return `${this.API_BASE_URL}/${caminho}`;
+
+  rejeitar(pedido: PedidoDeclaracaoDto) {
+    if (!confirm(`Rejeitar o pedido de ${pedido.nomeColaborador}?`)) return;
+
+    this.declaracaoService.resolver(pedido.id, null, true).subscribe({
+      next: () => {
+        alert('Pedido rejeitado.');
+        this.carregarPedidos();
+      },
+      error: (err) => alert('Erro ao rejeitar: ' + err.error?.message)
+    });
   }
+
 }

@@ -2,13 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Notificacao } from '../interfaces/notificacao';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class NotificacaoService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://localhost:7234/api/Notificacoes';
+  // private apiUrl = 'https://localhost:7234/api/Notificacoes';
+  private apiUrl = `${environment.apiUrl}/Notificacoes`;
 
   // Estado reativo para o contador de não lidas
   public totalNaoLidas = new BehaviorSubject<number>(0);

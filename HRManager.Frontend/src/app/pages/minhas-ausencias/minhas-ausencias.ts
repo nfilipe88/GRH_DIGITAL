@@ -1,43 +1,42 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { AusenciaDto } from '../../interfaces/ausenciaDto';
-import { CriarAusenciaRequest } from '../../interfaces/criarAusenciaRequest';
 import { AusenciaService } from '../../services/ausencia.service';
-import { FormsModule } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AusenciaSaldoDto } from '../../interfaces/ausenciaSaldoDto';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-minhas-ausencias',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule],
   templateUrl: './minhas-ausencias.html',
   styleUrl: './minhas-ausencias.css',
 })
 export class MinhasAusencias implements OnInit {
-  // Adicione esta constante ou propriedade com o URL base da sua API
-  // (Idealmente viria do environment, mas para agora hardcoded serve)
-  private readonly API_BASE_URL = 'https://localhost:7234';
-
   private ausenciaService = inject(AusenciaService);
+  private fb = inject(FormBuilder);
 
   public listaAusencias: AusenciaDto[] = [];
-  public dadosFormulario: CriarAusenciaRequest;
+  public saldoInfo: AusenciaSaldoDto | null = null;
 
+  // Formulário Reativo
+  public ausenciaForm: FormGroup;
   public isModalAberto: boolean = false;
+  public ficheiroSelecionado: File | null = null;
 
   // Feedback
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
-  public feedbackModal: string | null = null;
-  public isErrorModal: boolean = false;
-
-  // *** 1. PROPRIEDADE DE SALDO ***
-  public saldoInfo: AusenciaSaldoDto | null = null;
-
-  // Variável para guardar o ficheiro selecionado temporariamente
-  public ficheiroSelecionado: File | null = null;
 
   constructor() {
-    this.dadosFormulario = this.criarFormularioVazio();
+    // Criação do formulário com Validação Personalizada de Datas
+    this.ausenciaForm = this.fb.group({
+      tipo: ['Ferias', Validators.required],
+      dataInicio: [new Date().toISOString().split('T')[0], Validators.required],
+      dataFim: [new Date().toISOString().split('T')[0], Validators.required],
+      motivo: [''],
+      documento: [null]
+    }, { validators: this.validarDatas }); // <--- Validador de grupo
   }
 
   ngOnInit(): void {
@@ -45,27 +44,30 @@ export class MinhasAusencias implements OnInit {
     this.carregarSaldo();
   }
 
+  // --- Validador Personalizado: Fim deve ser maior que Início ---
+  private validarDatas(group: AbstractControl): ValidationErrors | null {
+    const inicio = group.get('dataInicio')?.value;
+    const fim = group.get('dataFim')?.value;
+
+    if (inicio && fim && new Date(inicio) > new Date(fim)) {
+      return { datasInvalidas: true };
+    }
+    return null;
+  }
+
   carregarAusencias(): void {
     this.ausenciaService.getAusencias().subscribe({
-      next: (data) => {
-        this.listaAusencias = data;
-      },
-      error: (err) => {
-        console.error(err);
-        this.mostrarFeedback('Erro ao carregar histórico.', true);
-      }
+      next: (data) => this.listaAusencias = data,
+      error: () => this.mostrarFeedback('Erro ao carregar histórico.', true)
     });
   }
 
-  // *** 3. NOVO MÉTODO ***
   carregarSaldo(): void {
     this.ausenciaService.getSaldo().subscribe({
-      next: (data) => this.saldoInfo = data,
-      error: (err) => console.error('Erro ao carregar saldo', err)
+      next: (data) => this.saldoInfo = data
     });
   }
 
-  // Método disparado quando o utilizador escolhe um ficheiro
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
     if (file) {
@@ -73,79 +75,52 @@ export class MinhasAusencias implements OnInit {
     }
   }
 
-  onSubmit(): void {
-    this.limparFeedback(true);
-
-    // Validação básica de datas
-    if (this.dadosFormulario.dataInicio > this.dadosFormulario.dataFim) {
-      this.mostrarFeedback('A data de fim deve ser superior à de início.', true, true);
-      return;
-    }
-    // Adicionar o ficheiro ao objeto antes de enviar
-    if (this.ficheiroSelecionado) {
-      this.dadosFormulario.documento = this.ficheiroSelecionado;
-    }
-
-    this.ausenciaService.solicitarAusencia(this.dadosFormulario).subscribe({
-      next: (res) => {
-        this.mostrarFeedback('Pedido submetido com sucesso!', false);
-        this.carregarAusencias();
-        this.carregarSaldo(); // *** 4. Atualizar saldo após novo pedido ***
-        this.fecharModal();
-      },
-      error: (err) => {
-        const msg = err.error?.message || 'Erro ao submeter pedido.';
-        this.mostrarFeedback(msg, true, true);
-      }
-    });
-  }
-
-  // --- Controlo do Modal ---
   abrirModal(): void {
-    this.dadosFormulario = this.criarFormularioVazio();
-    this.limparFeedback(true);
+    this.ausenciaForm.reset({
+      tipo: 'Ferias',
+      dataInicio: new Date().toISOString().split('T')[0],
+      dataFim: new Date().toISOString().split('T')[0]
+    });
+    this.ficheiroSelecionado = null;
     this.isModalAberto = true;
   }
 
   fecharModal(): void {
     this.isModalAberto = false;
-    this.ficheiroSelecionado = null; // Limpar o ficheiro selecionado ao fechar
   }
 
-  // --- Auxiliares ---
-  private criarFormularioVazio(): CriarAusenciaRequest {
-    return {
-      tipo: 'Ferias', // Valor por defeito
-      dataInicio: new Date().toISOString().split('T')[0],
-      dataFim: new Date().toISOString().split('T')[0],
-      motivo: ''
-    };
-  }
+  onSubmit(): void {
+    if (this.ausenciaForm.invalid) return;
 
-  private mostrarFeedback(msg: string, isError: boolean, noModal: boolean = false): void {
-    if (noModal) {
-      this.feedbackModal = msg;
-      this.isErrorModal = isError;
-    } else {
-      this.feedbackMessage = msg;
-      this.isError = isError;
+    // Preparar objeto para envio
+    const request = this.ausenciaForm.value;
+    // Adicionar o ficheiro manualmente ao objeto, pois o Reactive Forms não gere ficheiros nativamente bem
+    if (this.ficheiroSelecionado) {
+      request.documento = this.ficheiroSelecionado;
     }
+
+    this.ausenciaService.solicitarAusencia(request).subscribe({
+      next: () => {
+        this.mostrarFeedback('Pedido submetido com sucesso!', false);
+        this.carregarAusencias();
+        this.carregarSaldo();
+        this.fecharModal();
+      },
+      error: (err) => {
+        const msg = err.error?.message || 'Erro ao submeter pedido.';
+        this.mostrarFeedback(msg, true);
+      }
+    });
   }
 
-  private limparFeedback(noModal: boolean = false): void {
-    if (noModal) {
-      this.feedbackModal = null;
-      this.isErrorModal = false;
-    } else {
-      this.feedbackMessage = null;
-      this.isError = false;
-    }
-  }
-
-  /**
-   * Gera o link completo para o documento
-   */
   getDocumentoUrl(caminho: string): string {
-    return `${this.API_BASE_URL}/${caminho}`;
+    // Usa a URL dinâmica do environment
+    return `${environment.baseUrl}/${caminho}`;
+  }
+
+  private mostrarFeedback(msg: string, isError: boolean): void {
+    this.feedbackMessage = msg;
+    this.isError = isError;
+    setTimeout(() => this.feedbackMessage = null, 5000);
   }
 }

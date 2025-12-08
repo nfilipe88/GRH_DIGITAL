@@ -3,6 +3,7 @@ import { AusenciaDto } from '../../interfaces/ausenciaDto';
 import { AusenciaService } from '../../services/ausencia.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-gestao-ausencias',
@@ -123,7 +124,8 @@ export class GestaoAusencias implements OnInit {
    * Gera o link completo para o documento
    */
   getDocumentoUrl(caminho: string): string {
-    return `${this.API_BASE_URL}/${caminho}`;
+    // 3. USAR environment.baseUrl
+    return `${environment.baseUrl}/${caminho}`;
   }
 
   /**

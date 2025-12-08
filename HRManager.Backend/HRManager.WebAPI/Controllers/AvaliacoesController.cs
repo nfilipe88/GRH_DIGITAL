@@ -19,6 +19,15 @@ namespace HRManager.WebAPI.Controllers
             _avaliacaoService = avaliacaoService;
         }
 
+        [HttpGet("minhas")]
+        public async Task<IActionResult> GetMinhasAvaliacoes()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            // Chama o método do serviço (que você implementou no passo anterior de correção)
+            var result = await _avaliacaoService.GetMinhasAvaliacoesAsync(email);
+            return Ok(result);
+        }
+
         [HttpGet("equipa")]
         [Authorize(Roles = "GestorRH,GestorMaster")]
         public async Task<IActionResult> GetAvaliacoesEquipa()
