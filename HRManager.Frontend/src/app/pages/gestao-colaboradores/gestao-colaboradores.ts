@@ -27,7 +27,7 @@ export class GestaoColaboradores implements OnInit {
   public listaColaboradores: Colaborador[] = [];
 
   public isModalAberto: boolean = false;
-  public idColaboradorEmEdicao: number | null = null;
+  public idColaboradorEmEdicao: string='';
   public loggedInUserRole: string | null = null;
   public nomeInstituicaoGestor: string = '';
 
@@ -99,7 +99,7 @@ export class GestaoColaboradores implements OnInit {
   // --- AÇÕES DO FORMULÁRIO ---
 
   abrirModalNovo(): void {
-    this.idColaboradorEmEdicao = null;
+    this.idColaboradorEmEdicao = '';
     this.limparFeedback();
     this.colaboradorForm.reset(); // Limpa o formulário
 
@@ -215,7 +215,7 @@ export class GestaoColaboradores implements OnInit {
 
   fecharModal(): void {
     this.isModalAberto = false;
-    this.idColaboradorEmEdicao = null;
+    this.idColaboradorEmEdicao = '';
     this.colaboradorForm.reset();
   }
 

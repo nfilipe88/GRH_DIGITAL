@@ -9,7 +9,7 @@ import { RouterLink } from '@angular/router';
   selector: 'app-dashboard',
   imports: [CommonModule, NgxChartsModule, RouterLink],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css',// CORREÇÃO 1: Mudar estratégia para OnPush para evitar o erro NG0100
+  styleUrls: ['./dashboard.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Dashboard implements OnInit {

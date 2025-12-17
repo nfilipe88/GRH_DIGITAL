@@ -3,10 +3,10 @@
     public class PerfilDto
     {
         // Dados Básicos
-        public int ColaboradorId { get; set; }
-        public string NomeCompleto { get; set; }
-        public string Cargo { get; set; }
-        public string Email { get; set; }
+        public Guid ColaboradorId { get; set; }
+        public string NomeCompleto { get; set; } = String.Empty;
+        public string Cargo { get; set; }=String.Empty;
+        public string Email { get; set; }=String.Empty;
         // *** ADICIONE ESTAS LINHAS ***
         public string? Morada { get; set; }
         public string? IBAN { get; set; }

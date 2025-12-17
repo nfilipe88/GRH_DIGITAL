@@ -1,9 +1,10 @@
 export interface PedidoDeclaracaoDto {
-  id: number;
+  id: string;
+  colaboradorId: string;
   nomeColaborador: string;
   tipo: string; // "FinsBancarios", "VistoConsular", etc.
   estado: string; // "Pendente", "Concluido", "Rejeitado"
-  dataSolicitacao: string;
-  dataConclusao?: string;
+  dataSolicitacao: Date;
+  dataConclusao?: Date;
   caminhoFicheiro?: string;
 }

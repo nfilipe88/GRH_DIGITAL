@@ -10,42 +10,33 @@ import { environment } from '../../environments/environment';
 })
 export class DeclaracaoService {
   private http = inject(HttpClient);
-  // private apiUrl = 'https://localhost:7234/api/Declaracoes'; // Confirme a porta
   private apiUrl = `${environment.apiUrl}/Declaracoes`;
 
-  /**
-   * Lista pedidos (filtrados pelo backend com base no cargo)
-   */
-  public getPedidos(): Observable<PedidoDeclaracaoDto[]> {
-    return this.http.get<PedidoDeclaracaoDto[]>(this.apiUrl);
+  // --- COLABORADOR ---
+
+  solicitar(request: CriarPedidoDeclaracaoRequest): Observable<PedidoDeclaracaoDto> {
+    return this.http.post<PedidoDeclaracaoDto>(`${this.apiUrl}/solicitar`, request);
   }
 
-  /**
-   * Colaborador: Solicita uma nova declaração
-   */
-  public solicitar(pedido: CriarPedidoDeclaracaoRequest): Observable<any> {
-    return this.http.post<any>(this.apiUrl, pedido);
+  // Método correto para o colaborador ver as suas
+  getMinhas(): Observable<PedidoDeclaracaoDto[]> {
+    return this.http.get<PedidoDeclaracaoDto[]>(`${this.apiUrl}/minhas`);
   }
 
-  /**
-   * Gestor: Resolve o pedido (Upload do PDF ou Rejeição)
-   * @param id ID do pedido
-   * @param documento Ficheiro PDF assinado (obrigatório para aprovar)
-   * @param rejeitar Se true, rejeita o pedido (documento é ignorado)
-   */
-  public resolver(id: number, ficheiro: File | null, rejeitar: boolean= false): Observable<any> {
+  // --- GESTOR RH ---
 
-    // Se for rejeição, basta mandar o flag na Query String
-    if (rejeitar) {
-      return this.http.put(`${this.apiUrl}/${id}/resolver?rejeitar=true`, {});
-    }
+  // Método correto para o gestor ver as pendentes
+  getPendentes(): Observable<PedidoDeclaracaoDto[]> {
+    return this.http.get<PedidoDeclaracaoDto[]>(`${this.apiUrl}/pendentes`);
+  }
 
-    // Se for aprovação, temos de enviar o ficheiro via FormData
-    const formData = new FormData();
-    if (ficheiro) {
-      formData.append('documento', ficheiro); // 'documento' deve bater certo com [FromForm] IFormFile documento no Controller
-    }
+  // Aprovar e Gerar PDF
+  gerarDeclaracao(id: string): Observable<Blob> {
+    return this.http.put(`${this.apiUrl}/${id}/gerar`, {}, { responseType: 'blob' });
+  }
 
-    return this.http.put(`${this.apiUrl}/${id}/resolver?rejeitar=false`, formData);
+  // Rejeitar ou alterar estado sem gerar PDF
+  atualizarEstado(id: string, aprovado: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/estado`, aprovado);
   }
 }

@@ -10,8 +10,6 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class ColaboradorService {
-
-  // private apiUrl = 'https://localhost:7234/api/Colaboradores'; // Use a porta correta! https
   private apiUrl = `${environment.apiUrl}/Colaboradores`;
 
   constructor(private http: HttpClient) { }
@@ -23,9 +21,6 @@ export class ColaboradorService {
   public getColaboradores(): Observable<Colaborador[]> {
     return this.http.get<Colaborador[]>(this.apiUrl);
   }
-  // public getColaboradores(page: number = 1, pageSize: number = 50): Observable<{ data: Colaborador[], total: number }> {
-  //   return this.http.get<{ data: Colaborador[], total: number }>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`);
-  // }
 
   /**
    * Envia um novo colaborador para a API
@@ -36,31 +31,31 @@ export class ColaboradorService {
   }
 
   // ---
-  // *** NOVO MÉTODO: Buscar um colaborador por ID ***
+  // *** MÉTODO: Buscar um colaborador por ID ***
   // ---
-  public getColaboradorById(id: number): Observable<ColaboradorDetails> {
+  public getColaboradorById(id: string): Observable<ColaboradorDetails> {
     return this.http.get<ColaboradorDetails>(`${this.apiUrl}/${id}`);
   }
 
   // ---
-  // *** NOVO MÉTODO: Atualizar um colaborador ***
+  // *** MÉTODO: Atualizar um colaborador ***
   // ---
-  public atualizarColaborador(id: number, colaborador: CriarColaboradorRequest): Observable<any> {
+  public atualizarColaborador(id: string, colaborador: CriarColaboradorRequest): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, colaborador);
   }
 
   // ---
   // *** MÉTODO SUBSTITUÍDO ***
   // ---
-  public atualizarEstadoColaborador(id: number, isAtiva: boolean): Observable<any> {
+  public atualizarEstadoColaborador(id: string, isAtiva: boolean): Observable<any> {
     const request = { isAtiva: isAtiva };
     return this.http.patch<any>(`${this.apiUrl}/${id}/estado`, request);
   }
 
   // ---
-  // *** NOVO MÉTODO: Eliminar um colaborador ***
+  // *** MÉTODO: Eliminar um colaborador ***
   // ---
-  public deletarColaborador(id: number): Observable<any> {
+  public deletarColaborador(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
 }

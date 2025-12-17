@@ -2,17 +2,18 @@
 {
     public class DashboardStatsDto
     {
-        public int TotalInstituicoes { get; set; }
+        // --- DADOS PARA GESTORES ---
         public int TotalColaboradores { get; set; }
-        public int TotalColaboradoresAtivos { get; set; }
-        public int TotalUtilizadores { get; set; }
-        public int AusenciasPendentes { get; set; }
-        public int NovasAdmissoesMes { get; set; }
+        public int TotalAusenciasAtivas { get; set; }
+        public int AvaliacoesEmAndamento { get; set; }
+        public List<DepartamentoStatDto> ColaboradoresPorDepartamento { get; set; } = new();
 
-        // Útil para gráficos de tarte (Pie Chart)
-        public Dictionary<string, int> ColaboradoresPorDepartamento { get; set; } = new();
+        // --- DADOS PARA COLABORADORES (NOVO) ---
+        public int MeusDiasFeriasDisponiveis { get; set; }
+        public string? ProximaAvaliacaoEstado { get; set; } // Ex: "Não Iniciada", "Autoavaliação Pendente"
+        public int MinhasDeclaracoesPendentes { get; set; }
 
-        // Útil para lista rápida "Quem está de férias hoje?"
-        public List<string> ColaboradoresAusentesHoje { get; set; } = new();
+        // Flag para facilitar o frontend (opcional, mas útil)
+        public bool IsVisaoGestor { get; set; }
     }
 }

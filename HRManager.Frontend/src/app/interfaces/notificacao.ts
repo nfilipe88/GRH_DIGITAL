@@ -1,8 +1,8 @@
 export interface Notificacao {
-  id: number;
+  id: string;
   titulo: string;
   mensagem: string;
   link?: string;
-  dataCriacao: string;
+  dataCriacao: Date;
   lida: boolean;
 }

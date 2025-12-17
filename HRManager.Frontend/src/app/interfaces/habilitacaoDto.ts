@@ -1,5 +1,5 @@
 export interface HabilitacaoDto {
-  id: number;
+  id: string;
   grau: string; // "Licenciatura", "Mestrado", etc.
   curso: string;
   instituicao: string;

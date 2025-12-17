@@ -1,10 +1,7 @@
-﻿using FluentValidation;
-using HRManager.WebAPI.Domain.Interfaces;
+﻿using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
-using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HRManager.WebAPI.Controllers
 {
@@ -28,39 +25,24 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetInstituicao(Guid id)
+        public async Task<IActionResult> GetInstituicaoById(Guid id)
         {
             var instituicao = await _instituicaoService.GetByIdAsync(id);
-            if (instituicao == null) return NotFound();
             return Ok(instituicao);
         }
 
         [HttpPost]
         public async Task<IActionResult> CriarInstituicao([FromBody] CriarInstituicaoRequest request)
         {
-            try
-            {
-                var criada = await _instituicaoService.CreateAsync(request);
-                return CreatedAtAction(nameof(GetInstituicao), new { id = criada.Id }, criada);
-            }
-            catch (ValidationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var novaInstituicao = await _instituicaoService.CreateAsync(request);
+            return CreatedAtAction(nameof(GetInstituicaoById), new { id = novaInstituicao.Id }, novaInstituicao);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> AtualizarInstituicao(Guid id, [FromBody] AtualizarInstituicaoRequest request)
         {
-            try
-            {
-                var atualizada = await _instituicaoService.UpdateAsync(id, request);
-                return Ok(atualizada);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
+            var atualizada = await _instituicaoService.UpdateAsync(id, request);
+            return Ok(atualizada);
         }
     }
 }

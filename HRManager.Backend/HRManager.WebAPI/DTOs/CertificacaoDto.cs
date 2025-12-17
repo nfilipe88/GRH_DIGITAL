@@ -2,7 +2,7 @@
 {
     public class CertificacaoDto
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Nome { get; set; }
         public string Entidade { get; set; }
         public DateTime DataEmissao { get; set; }

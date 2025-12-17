@@ -1,6 +1,6 @@
 // *** INTERFACE PARA CARREGAR DETALHES DO UTILIZADOR ***
 export interface UserDetails {
-  id: number;
+  id: string;
   email: string;
   role: string;
   nomeInstituicao?: string;

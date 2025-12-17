@@ -1,13 +1,9 @@
 ﻿using FluentValidation;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
-using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace HRManager.WebAPI.Controllers
 {
@@ -52,10 +48,17 @@ namespace HRManager.WebAPI.Controllers
         {
             try
             {
-                var user = await _authService.RegisterAsync(request);
-                return CreatedAtAction(nameof(Login), new { email = user.Email }, user);
+                // CORREÇÃO: RegisterAsync agora devolve uma string (Token)
+                var token = await _authService.RegisterAsync(request);
+
+                // Retornamos OK com o token gerado
+                return Ok(new { token });
             }
             catch (ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
@@ -64,15 +67,18 @@ namespace HRManager.WebAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            // Validação automática do FluentValidation ocorre aqui
             try
             {
                 var token = await _authService.LoginAsync(request);
                 return Ok(new { token });
             }
-            catch (ValidationException ex)
+            catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { message = ex.Message }); // 401 para falha de login
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
 

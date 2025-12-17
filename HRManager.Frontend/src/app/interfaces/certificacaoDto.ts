@@ -1,5 +1,5 @@
 export interface CertificacaoDto {
-  id: number;
+  id: string;
   nome: string;
   entidade: string;
   dataEmissao: string;

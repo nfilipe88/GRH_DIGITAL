@@ -1,17 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HRManager.WebAPI.Domain.Base;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace HRManager.WebAPI.Models
 {
-    public class CertificacaoProfissional
+    public class CertificacaoProfissional : TenantEntity
     {
-        [Key]
-        public int Id { get; set; }
-
         // --- Relação com Colaborador ---
         [Required]
-        public int ColaboradorId { get; set; }
+        public Guid ColaboradorId { get; set; }
 
         [ForeignKey("ColaboradorId")]
         [JsonIgnore]

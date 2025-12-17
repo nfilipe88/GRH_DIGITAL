@@ -23,36 +23,43 @@ namespace HRManager.WebAPI.Migrations
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Ausencia", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CaminhoDocumento")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<int>("ColaboradorId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("ColaboradorId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ComentarioGestor")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<DateTime>("DataFim")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataInicio")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("DataResposta")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataSolicitacao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Estado")
                         .HasColumnType("integer");
+
+                    b.Property<Guid>("InstituicaoId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Motivo")
                         .HasColumnType("text");
@@ -69,44 +76,47 @@ namespace HRManager.WebAPI.Migrations
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Avaliacao", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<Guid>("CicloId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("CicloId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ColaboradorId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("ColaboradorId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ComentarioFinalGestor")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<DateTime?>("DataConclusao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Estado")
                         .HasColumnType("integer");
 
-                    b.Property<int>("GestorId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("GestorId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("InstituicaoId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal?>("MediaFinal")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CicloId");
 
                     b.HasIndex("ColaboradorId");
+
+                    b.HasIndex("GestorId");
 
                     b.HasIndex("InstituicaoId");
 
@@ -115,17 +125,24 @@ namespace HRManager.WebAPI.Migrations
 
             modelBuilder.Entity("HRManager.WebAPI.Models.AvaliacaoItem", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<Guid>("AvaliacaoId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("AvaliacaoId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("CompetenciaId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("CompetenciaId")
-                        .HasColumnType("integer");
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid>("InstituicaoId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("JustificativaColaborador")
                         .HasColumnType("text");
@@ -148,31 +165,73 @@ namespace HRManager.WebAPI.Migrations
                     b.ToTable("AvaliacaoItens");
                 });
 
+            modelBuilder.Entity("HRManager.WebAPI.Models.Cargo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Descricao")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("InstituicaoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsAtivo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstituicaoId");
+
+                    b.HasIndex("Nome", "InstituicaoId")
+                        .IsUnique();
+
+                    b.ToTable("Cargos");
+                });
+
             modelBuilder.Entity("HRManager.WebAPI.Models.CertificacaoProfissional", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CaminhoDocumento")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<int>("ColaboradorId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("ColaboradorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataEmissao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("DataValidade")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("EntidadeEmissora")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("InstituicaoId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("NomeCertificacao")
                         .IsRequired()
@@ -188,17 +247,21 @@ namespace HRManager.WebAPI.Migrations
 
             modelBuilder.Entity("HRManager.WebAPI.Models.CicloAvaliacao", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataFim")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataInicio")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("InstituicaoId")
                         .HasColumnType("uuid");
@@ -217,25 +280,26 @@ namespace HRManager.WebAPI.Migrations
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Colaborador", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Cargo")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<Guid>("CargoId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("DataAdmissao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("DataNascimento")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Departamento")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -243,6 +307,9 @@ namespace HRManager.WebAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("GestorId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("IBAN")
                         .HasMaxLength(34)
@@ -290,23 +357,33 @@ namespace HRManager.WebAPI.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CargoId");
+
+                    b.HasIndex("GestorId");
 
                     b.HasIndex("InstituicaoId");
 
-                    b.HasIndex("NIF", "InstituicaoId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Colaboradores");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Competencia", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Descricao")
                         .HasColumnType("text");
@@ -326,31 +403,37 @@ namespace HRManager.WebAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InstituicaoId");
+
                     b.ToTable("Competencias");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.HabilitacaoLiteraria", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CaminhoDocumento")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<int>("ColaboradorId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("ColaboradorId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Curso")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<DateTime>("DataConclusao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Grau")
                         .HasColumnType("integer");
@@ -359,6 +442,9 @@ namespace HRManager.WebAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("InstituicaoId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -373,8 +459,11 @@ namespace HRManager.WebAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("EmailContato")
                         .IsRequired()
@@ -407,22 +496,20 @@ namespace HRManager.WebAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdentificadorUnico")
-                        .IsUnique();
-
                     b.ToTable("Instituicoes");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Notificacao", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("InstituicaoId")
                         .HasColumnType("uuid");
@@ -441,41 +528,46 @@ namespace HRManager.WebAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Notificacoes");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.PedidoDeclaracao", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CaminhoFicheiro")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<int>("ColaboradorId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("ColaboradorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("DataConclusao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("DataSolicitacao")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Estado")
                         .HasColumnType("integer");
 
                     b.Property<string>("Observacoes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Tipo")
                         .HasColumnType("integer");
@@ -487,25 +579,57 @@ namespace HRManager.WebAPI.Migrations
                     b.ToTable("PedidosDeclaracao");
                 });
 
+            modelBuilder.Entity("HRManager.WebAPI.Models.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("InstituicaoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("HRManager.WebAPI.Models.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("InstituicaoId")
+                    b.Property<Guid>("InstituicaoId")
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Nome")
+                    b.Property<string>("NomeCompleto")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -513,18 +637,26 @@ namespace HRManager.WebAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
 
                     b.HasIndex("InstituicaoId");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("HRManager.WebAPI.Models.UserRole", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Ausencia", b =>
@@ -552,6 +684,12 @@ namespace HRManager.WebAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("HRManager.WebAPI.Models.User", "Gestor")
+                        .WithMany()
+                        .HasForeignKey("GestorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("HRManager.WebAPI.Models.Instituicao", "Instituicao")
                         .WithMany()
                         .HasForeignKey("InstituicaoId")
@@ -561,6 +699,8 @@ namespace HRManager.WebAPI.Migrations
                     b.Navigation("Ciclo");
 
                     b.Navigation("Colaborador");
+
+                    b.Navigation("Gestor");
 
                     b.Navigation("Instituicao");
                 });
@@ -584,6 +724,17 @@ namespace HRManager.WebAPI.Migrations
                     b.Navigation("Competencia");
                 });
 
+            modelBuilder.Entity("HRManager.WebAPI.Models.Cargo", b =>
+                {
+                    b.HasOne("HRManager.WebAPI.Models.Instituicao", "Instituicao")
+                        .WithMany()
+                        .HasForeignKey("InstituicaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instituicao");
+                });
+
             modelBuilder.Entity("HRManager.WebAPI.Models.CertificacaoProfissional", b =>
                 {
                     b.HasOne("HRManager.WebAPI.Models.Colaborador", "Colaborador")
@@ -597,8 +748,39 @@ namespace HRManager.WebAPI.Migrations
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Colaborador", b =>
                 {
+                    b.HasOne("HRManager.WebAPI.Models.Cargo", "Cargo")
+                        .WithMany()
+                        .HasForeignKey("CargoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HRManager.WebAPI.Models.Colaborador", "Gestor")
+                        .WithMany()
+                        .HasForeignKey("GestorId");
+
                     b.HasOne("HRManager.WebAPI.Models.Instituicao", "Instituicao")
                         .WithMany("Colaboradores")
+                        .HasForeignKey("InstituicaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HRManager.WebAPI.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Cargo");
+
+                    b.Navigation("Gestor");
+
+                    b.Navigation("Instituicao");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("HRManager.WebAPI.Models.Competencia", b =>
+                {
+                    b.HasOne("HRManager.WebAPI.Models.Instituicao", "Instituicao")
+                        .WithMany()
                         .HasForeignKey("InstituicaoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -617,6 +799,17 @@ namespace HRManager.WebAPI.Migrations
                     b.Navigation("Colaborador");
                 });
 
+            modelBuilder.Entity("HRManager.WebAPI.Models.Notificacao", b =>
+                {
+                    b.HasOne("HRManager.WebAPI.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("HRManager.WebAPI.Models.PedidoDeclaracao", b =>
                 {
                     b.HasOne("HRManager.WebAPI.Models.Colaborador", "Colaborador")
@@ -631,10 +824,31 @@ namespace HRManager.WebAPI.Migrations
             modelBuilder.Entity("HRManager.WebAPI.Models.User", b =>
                 {
                     b.HasOne("HRManager.WebAPI.Models.Instituicao", "Instituicao")
-                        .WithMany()
-                        .HasForeignKey("InstituicaoId");
+                        .WithMany("Users")
+                        .HasForeignKey("InstituicaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Instituicao");
+                });
+
+            modelBuilder.Entity("HRManager.WebAPI.Models.UserRole", b =>
+                {
+                    b.HasOne("HRManager.WebAPI.Models.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HRManager.WebAPI.Models.User", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Avaliacao", b =>
@@ -645,6 +859,18 @@ namespace HRManager.WebAPI.Migrations
             modelBuilder.Entity("HRManager.WebAPI.Models.Instituicao", b =>
                 {
                     b.Navigation("Colaboradores");
+
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("HRManager.WebAPI.Models.Role", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("HRManager.WebAPI.Models.User", b =>
+                {
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

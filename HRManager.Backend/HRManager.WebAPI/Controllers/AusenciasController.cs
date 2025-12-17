@@ -1,5 +1,7 @@
-﻿using HRManager.WebAPI.Domain.Interfaces;
+﻿using HRManager.WebAPI.Constants;
+using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
+using HRManager.WebAPI.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -9,7 +11,7 @@ namespace HRManager.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Requer login para tudo
+    [Authorize]
     public class AusenciasController : ControllerBase
     {
         private readonly IAusenciaService _ausenciaService;
@@ -23,77 +25,64 @@ namespace HRManager.WebAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAusencias()
         {
-            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email");
-            var isGestorRH = User.IsInRole("GestorRH");
-            var isGestorMaster = User.IsInRole("GestorMaster");
+            // O serviço já sabe lidar com as permissões se passarmos o contexto correto
+            // Usamos as extensões para limpar a leitura dos Claims
+            var email = User.FindFirst("email")?.Value; // ou User.Identity.Name
+            var isGestor = User.IsRole(RolesConstants.GestorRH) || User.IsRole(RolesConstants.GestorMaster);
 
-            var result = await _ausenciaService.GetAusenciasAsync(email, isGestorRH, isGestorMaster);
+            var result = await _ausenciaService.GetAusenciasAsync(email, isGestor, User.IsRole(RolesConstants.GestorMaster));
             return Ok(result);
         }
 
         [HttpGet("saldo")]
         public async Task<IActionResult> GetMeuSaldo()
         {
+            // 1. Tenta obter pelo NameIdentifier (Padrão .NET)
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // 2. Fallback: Se falhar, tenta pelo claim "id" (comum em alguns JWTs custom) ou "sub"
+            if (string.IsNullOrEmpty(userId))
+            {
+                userId = User.FindFirst("id")?.Value ?? User.FindFirst("sub")?.Value;
+            }
+
+            // 3. Se ainda assim for nulo, bloqueia aqui (não chama o serviço)
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { Message = "Não foi possível identificar o utilizador no token." });
+            }
+
             try
             {
-                var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email");
-                var result = await _ausenciaService.GetSaldoAsync(email);
+                var result = await _ausenciaService.GetSaldoAsync(userId);
                 return Ok(result);
             }
-            catch (KeyNotFoundException ex)
+            catch (Exception ex)
             {
-                return NotFound(new { message = ex.Message });
+                // Log opcional aqui
+                return BadRequest(new { Message = ex.Message });
             }
         }
 
         [HttpPost]
         public async Task<IActionResult> SolicitarAusencia([FromForm] CriarAusenciaRequest request)
         {
-            // O FluentValidation (configurado no Program.cs) já validou os campos básicos aqui.
-            // Se chegou aqui, DataInicio e Tipo são válidos.
-
-            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email");
-
-            try
-            {
-                await _ausenciaService.SolicitarAusenciaAsync(email, request);
-                return StatusCode(201, new { message = "Pedido de ausência submetido com sucesso." });
-            }
-            catch (ValidationException ex) // Erros de Negócio (ex: Saldo, Conflito)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex) // Erros inesperados
-            {
-                return BadRequest(new { message = "Erro ao processar pedido: " + ex.Message });
-            }
+            var email = User.FindFirst("email")?.Value;
+            await _ausenciaService.SolicitarAusenciaAsync(email, request);
+            return StatusCode(201, new { message = "Pedido de ausência submetido com sucesso." });
         }
 
         [HttpPut("{id}/responder")]
-        [Authorize(Roles = "GestorMaster, GestorRH")]
-        public async Task<IActionResult> ResponderAusencia(int id, [FromBody] ResponderAusenciaRequest request)
+        [Authorize(Roles = RolesConstants.ApenasGestores)] // Uso da constante
+        public async Task<IActionResult> ResponderAusencia(Guid id, [FromBody] ResponderAusenciaRequest request)
         {
-            var email = User.FindFirstValue(ClaimTypes.Email);
-            var isGestorRH = User.IsInRole("GestorRH");
+            var email = User.FindFirst("email")?.Value;
+            var isGestorRH = User.IsRole(RolesConstants.GestorRH);
 
-            try
-            {
-                await _ausenciaService.ResponderAusenciaAsync(id, request, email, isGestorRH);
-                string acao = request.Aprovado ? "aprovado" : "rejeitado";
-                return Ok(new { message = $"Pedido {acao} com sucesso." });
-            }
-            catch (ValidationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Forbid();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { message = "Pedido não encontrado." });
-            }
+            await _ausenciaService.ResponderAusenciaAsync(id, request, email, isGestorRH);
+
+            string acao = request.Aprovado ? "aprovado" : "rejeitado";
+            return Ok(new { message = $"Pedido {acao} com sucesso." });
         }
     }
 }

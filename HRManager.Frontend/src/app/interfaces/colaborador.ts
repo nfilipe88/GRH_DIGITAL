@@ -1,7 +1,7 @@
 // *** INTERFACE ATUALIZADA ***
 // Corresponde ao nosso novo ColaboradorListDto
 export interface Colaborador {
-  id: number;
+  id: string;
   nomeCompleto: string;
   emailPessoal: string;
   nif: string;

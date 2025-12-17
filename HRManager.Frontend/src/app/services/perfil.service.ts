@@ -19,7 +19,7 @@ export class PerfilService {
    * Obtém o perfil.
    * @param colaboradorId (Opcional) Se for Gestor, pode passar o ID de outro colaborador.
    */
-  public getPerfil(colaboradorId?: number): Observable<PerfilDto> {
+  public getPerfil(colaboradorId?: string): Observable<PerfilDto> {
     let url = this.apiUrl;
     if (colaboradorId) {
       url += `?colaboradorId=${colaboradorId}`;
@@ -30,7 +30,7 @@ export class PerfilService {
   /**
    * Adiciona uma Habilitação Literaria (com upload)
    */
-  public addHabilitacao(dados: CriarHabilitacaoRequest, colaboradorId?: number): Observable<any> {
+  public addHabilitacao(dados: CriarHabilitacaoRequest, colaboradorId?: string): Observable<any> {
     const formData = new FormData();
     formData.append('Grau', dados.grau);
     formData.append('Curso', dados.curso);
@@ -50,7 +50,7 @@ export class PerfilService {
   /**
    * Adiciona uma Certificação Profissional (com upload)
    */
-  public addCertificacao(dados: CriarCertificacaoRequest, colaboradorId?: number): Observable<any> {
+  public addCertificacao(dados: CriarCertificacaoRequest, colaboradorId?: string): Observable<any> {
     const formData = new FormData();
     formData.append('NomeCertificacao', dados.nomeCertificacao);
     formData.append('EntidadeEmissora', dados.entidadeEmissora);
@@ -72,21 +72,21 @@ export class PerfilService {
   /**
    * Remove uma habilitação
    */
-  public deleteHabilitacao(id: number): Observable<any> {
+  public deleteHabilitacao(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/habilitacoes/${id}`);
   }
 
   /**
    * Remove uma certificação
    */
-  public deleteCertificacao(id: number): Observable<any> {
+  public deleteCertificacao(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/certificacoes/${id}`);
   }
 
   /**
    * Atualiza Morada e IBAN
    */
-  public updateDadosPessoais(dados: AtualizarDadosPessoaisRequest, colaboradorId?: number): Observable<any> {
+  public updateDadosPessoais(dados: AtualizarDadosPessoaisRequest, colaboradorId?: string): Observable<any> {
     let url = `${this.apiUrl}/dados-pessoais`;
     if (colaboradorId) url += `?colaboradorId=${colaboradorId}`;
 

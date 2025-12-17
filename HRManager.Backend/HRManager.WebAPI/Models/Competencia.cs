@@ -1,13 +1,12 @@
-﻿using HRManager.WebAPI.Domain.enums;
+﻿using HRManager.WebAPI.Domain.Base;
+using HRManager.WebAPI.Domain.enums;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace HRManager.WebAPI.Models
 {
-    public class Competencia
+    public class Competencia : TenantEntity
     {
-        [Key]
-        public int Id { get; set; }
-
         [Required]
         public string Nome { get; set; } // Ex: "Proatividade"
 
@@ -17,6 +16,7 @@ namespace HRManager.WebAPI.Models
         public bool IsAtiva { get; set; }
 
         // Multi-tenant
-        public Guid InstituicaoId { get; set; }
+        [JsonIgnore]
+        public virtual Instituicao? Instituicao { get; set; }
     }
 }

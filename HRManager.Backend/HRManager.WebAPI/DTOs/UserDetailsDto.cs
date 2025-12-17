@@ -5,21 +5,21 @@ namespace HRManager.WebAPI.DTOs
 {
     public class UserDetailsDto
     {
-        public int Id { get; set; }
-        public string NomeCompleto { get; set; }
-        public string NIF { get; set; }
+        public Guid Id { get; set; }
+        public string NomeCompleto { get; set; } = string.Empty;
+        public string NIF { get; set; } = string.Empty;
         public int? NumeroAgente { get; internal set; }
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
         public int? Telemovel { get; set; }
-        public string Cargo { get; set; }
+        public string Cargo { get; set; } = String.Empty;
         public DateTime? DataNascimento { get; set; } 
         public DateTime DataAdmissao { get; set; }
-        public string TipoContrato { get; set; }
-        public string Morada { get; set; }
+        public string TipoContrato { get; set; }= String.Empty;
+        public string Morada { get; set; }= String.Empty;
         public decimal? SalarioBase { get; set; }
-        public string IBAN { get; set; }
-        public string Departamento { get; set; }
-        public string Localizacao { get; set; }
+        public string IBAN { get; set; }= String.Empty;
+        public string Departamento { get; set; }= String.Empty;
+        public string Localizacao { get; set; }= String.Empty;
         public int SaldoFerias { get; set; }
         public bool IsAtivo { get; set; }
         public Guid InstituicaoId { get; set; }

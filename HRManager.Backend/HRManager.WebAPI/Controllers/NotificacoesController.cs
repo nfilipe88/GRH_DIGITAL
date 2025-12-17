@@ -27,7 +27,7 @@ namespace HRManager.WebAPI.Controllers
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
 
-            int userId = int.Parse(userIdStr);
+            Guid userId = Guid.Parse(userIdStr);
 
             var notificacoes = await _context.Notificacoes
                 .Where(n => n.UserId == userId && !n.Lida)
@@ -40,10 +40,10 @@ namespace HRManager.WebAPI.Controllers
 
         // PUT: Marcar como lida
         [HttpPut("{id}/ler")]
-        public async Task<IActionResult> MarcarComoLida(int id)
+        public async Task<IActionResult> MarcarComoLida(Guid id)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            int userId = int.Parse(userIdStr);
+            Guid userId = Guid.Parse(userIdStr);
 
             var notif = await _context.Notificacoes.FindAsync(id);
 

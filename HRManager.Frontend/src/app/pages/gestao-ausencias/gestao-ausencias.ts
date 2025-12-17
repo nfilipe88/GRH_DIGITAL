@@ -12,17 +12,19 @@ import { environment } from '../../../environments/environment';
   styleUrl: './gestao-ausencias.css',
 })
 export class GestaoAusencias implements OnInit {
-  // Adicione esta constante ou propriedade com o URL base da sua API
-  // (Idealmente viria do environment, mas para agora hardcoded serve)
   private readonly API_BASE_URL = 'https://localhost:7234';
 
   private ausenciaService = inject(AusenciaService);
   public listaAusencias: AusenciaDto[] = [];
+  modalAberto= false;
 
   // --- Controlo do Modal de Rejeição ---
   public isModalRejeicaoAberto: boolean = false;
-  public idAusenciaEmAnalise: number | null = null;
+  public idAusenciaEmAnalise: string = '';
   public motivoRejeicao: string = '';
+
+  respostaAprovada: boolean = true;
+  comentarioGestor: string = '';
 
   // --- Feedback ---
   public feedbackMessage: string | null = null;
@@ -84,6 +86,13 @@ export class GestaoAusencias implements OnInit {
     this.isModalRejeicaoAberto = true;
   }
 
+  abrirModalResposta(ausencia: AusenciaDto) {
+    this.idAusenciaEmAnalise = ausencia.id;
+    this.respostaAprovada = true; // Reset ao valor padrão
+    this.comentarioGestor = '';   // Reset ao comentário
+    this.modalAberto = true;
+  }
+
   confirmarRejeicao(): void {
     if (!this.idAusenciaEmAnalise) return;
     if (!this.motivoRejeicao.trim()) {
@@ -92,7 +101,7 @@ export class GestaoAusencias implements OnInit {
     }
 
     this.ausenciaService.responderAusencia(this.idAusenciaEmAnalise, {
-      aprovado: false,
+      aprovado: this.respostaAprovada,
       comentario: this.motivoRejeicao
     }).subscribe({
       next: () => {
@@ -108,7 +117,7 @@ export class GestaoAusencias implements OnInit {
 
   fecharModal(): void {
     this.isModalRejeicaoAberto = false;
-    this.idAusenciaEmAnalise = null;
+    this.idAusenciaEmAnalise = '';
   }
 
   private mostrarFeedback(msg: string, isError: boolean): void {

@@ -15,31 +15,38 @@ namespace HRManager.WebAPI.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var settings = _config.GetSection("EmailSettings");
+            // Validações de nulo
+            var host = _config["Smtp:Host"];
+            var portStr = _config["Smtp:Port"];
+            var username = _config["Smtp:Username"];
+            var password = _config["Smtp:Password"];
 
-            var fromEmail = settings["FromEmail"];
-            var fromName = settings["FromName"];
-            var password = settings["Password"];
-            var host = settings["Host"];
-            var port = int.Parse(settings["Port"]);
-
-            var message = new MailMessage
+            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(portStr) || 
+                string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                From = new MailAddress(fromEmail, fromName),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true // Permite usar HTML no email
-            };
+                Console.WriteLine("Configurações de SMTP incompletas.");
+                return; 
+            }
 
-            message.To.Add(new MailAddress(toEmail));
+            int port = int.Parse(portStr);
 
-            using var client = new SmtpClient(host, port)
+            var client = new SmtpClient(host, port)
             {
-                Credentials = new NetworkCredential(fromEmail, password),
+                Credentials = new NetworkCredential(username, password),
                 EnableSsl = true
             };
 
-            await client.SendMailAsync(message);
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(username, "HR Manager"), // Usar username como remetente
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true
+            };
+
+            mailMessage.To.Add(toEmail);
+
+            await client.SendMailAsync(mailMessage);
         }
     }
 }

@@ -1,5 +1,3 @@
-// Exemplo de código no HRManager.WebAPI/Data/HRManagerDbContext.cs
-
 using HRManager.Application.Interfaces;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.Models;
@@ -10,64 +8,95 @@ using System.Linq.Expressions;
 public class HRManagerDbContext : DbContext
 {
     private readonly ITenantService _tenantService;
-    private readonly Guid? _currentTenantId;
 
     public HRManagerDbContext(DbContextOptions<HRManagerDbContext> options, ITenantService tenantService)
         : base(options)
     {
         _tenantService = tenantService;
-        // Capturamos o ID no construtor para usar no filtro global
-        _currentTenantId = _tenantService.GetTenantId();
     }
 
-    // Mapeia os nossos modelos para tabelas no PostgreSQL
-    public DbSet<Ausencia> Ausencias { get; set; }
-    public DbSet<Avaliacao> Avaliacoes { get; set; }
-    public DbSet<AvaliacaoItem> AvaliacaoItens { get; set; }
-    public DbSet<CertificacaoProfissional> CertificacoesProfissionais { get; set; }
-    public DbSet<CicloAvaliacao> CiclosAvaliacao { get; set; }
+    public DbSet<Instituicao> Instituicoes { get; set; }
+    public DbSet<User> Users { get; set; }
     public DbSet<Colaborador> Colaboradores { get; set; }
+    public DbSet<Ausencia> Ausencias { get; set; }
+    public DbSet<Role> Roles { get; set; }
+    public DbSet<UserRole> UserRoles { get; set; }
+    public DbSet<Cargo> Cargos { get; set; }
     public DbSet<Competencia> Competencias { get; set; }
     public DbSet<HabilitacaoLiteraria> HabilitacoesLiterarias { get; set; }
-    public DbSet<Instituicao> Instituicoes { get; set; }
-    public DbSet<Notificacao> Notificacoes { get; set; }
+    public DbSet<CertificacaoProfissional> CertificacoesProfissionais { get; set; }
     public DbSet<PedidoDeclaracao> PedidosDeclaracao { get; set; }
-    public DbSet<User> Users { get; set; }
+    public DbSet<Notificacao> Notificacoes { get; set; }
+    public DbSet<CicloAvaliacao> CiclosAvaliacao { get; set; }
+    public DbSet<Avaliacao> Avaliacoes { get; set; }
+    public DbSet<AvaliacaoItem> AvaliacaoItens { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        //[cite_start]// Configurar regras do modelo (baseado na RN-01.1) [cite: 73]
-        modelBuilder.Entity<Instituicao>()
-            .HasIndex(i => i.IdentificadorUnico)
-            .IsUnique();
+        // 1. Configuração de UserRole (N:N)
+        modelBuilder.Entity<UserRole>()
+            .HasKey(ur => new { ur.UserId, ur.RoleId });
 
-        //[cite_start]// Configurar regras do modelo (baseado na RN-02.1) [cite: 88]
+        modelBuilder.Entity<UserRole>()
+            .HasOne(ur => ur.User)
+            .WithMany(u => u.UserRoles)
+            .HasForeignKey(ur => ur.UserId);
+
+        modelBuilder.Entity<UserRole>()
+            .HasOne(ur => ur.Role)
+            .WithMany(r => r.UserRoles)
+            .HasForeignKey(ur => ur.RoleId);
+
+        // 2. Configurações Específicas
         modelBuilder.Entity<Colaborador>()
-            .HasIndex(c => new { c.NIF, c.InstituicaoId }) // NIF deve ser único POR instituição
+            .Property(c => c.SalarioBase)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Avaliacao>()
+            .Property(a => a.MediaFinal)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Cargo>()
+            .HasIndex(c => new { c.Nome, c.InstituicaoId })
             .IsUnique();
-        // Garante que não existem dois utilizadores com o mesmo email
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
 
-        // --- AQUI ESTÁ A MUDANÇA CRÍTICA ---
-        // Aplicar Filtro Global para todas as entidades que implementam IHaveTenant
-        // Se _currentTenantId for NULL (ex: Gestor Master ou Admin), o filtro não se aplica (mostra tudo).
-        // Se tiver valor, filtra automaticamente.
+        // NOTA: REMOVEMOS O HasData(Roles) DAQUI PARA O DBSEEDER
+        // Para evitar o erro de modelo dinâmico com datas.
 
-        Expression<Func<IHaveTenant, bool>> tenantFilter = e =>
-            _currentTenantId == null || e.InstituicaoId == _currentTenantId;
+        // 3. Filtro Global Multi-Tenant
+        // Aplica-se a todas as entidades que implementam IHaveTenant
+        // A Instituicao NÃO implementa IHaveTenant propositadamente (ela é a raiz)
+        var tenantId = _tenantService.GetTenantId();
 
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        if (tenantId != Guid.Empty && tenantId != null)
         {
-            if (typeof(IHaveTenant).IsAssignableFrom(entityType.ClrType)) // <--- AQUI
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
-                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(ConvertFilterExpression(tenantFilter, entityType.ClrType));
+                if (typeof(IHaveTenant).IsAssignableFrom(entityType.ClrType))
+                {
+                    // Configura o filtro global
+                    var method = typeof(HRManagerDbContext)
+                        .GetMethod(nameof(SetGlobalQueryFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+                        ?.MakeGenericMethod(entityType.ClrType);
+
+                    method?.Invoke(null, new object[] { modelBuilder, tenantId });
+                }
             }
         }
     }
+
+    private static void SetGlobalQueryFilter<T>(ModelBuilder builder, Guid tenantId) where T : class, IHaveTenant
+    {
+        builder.Entity<T>().HasQueryFilter(e => e.InstituicaoId == tenantId);
+    }
+
 
     // Método auxiliar para converter o filtro genérico para o tipo específico da entidade
     private static LambdaExpression ConvertFilterExpression(Expression<Func<IHaveTenant, bool>> filterExpression, Type entityType)
@@ -79,6 +108,7 @@ public class HRManagerDbContext : DbContext
 
     public override int SaveChanges()
     {
+        // Obtém o ID do tenant atual (pode ser Empty se for via Seeder/Console)
         var instituicaoId = _tenantService.GetInstituicaoId();
 
         foreach (var entry in ChangeTracker.Entries<IHaveTenant>())
@@ -86,8 +116,16 @@ public class HRManagerDbContext : DbContext
             // Apenas para entidades novas (Added)
             if (entry.State == EntityState.Added)
             {
-                // Atribui o ID da Instituição ao novo registo
-                entry.Entity.InstituicaoId = instituicaoId;
+                // CORREÇÃO:
+                // Apenas sobrescreve se o ID atual for Empty.
+                // Se o Seeder já definiu um ID, mantemos esse ID.
+                if (entry.Entity.InstituicaoId == Guid.Empty && instituicaoId != Guid.Empty)
+                {
+                    entry.Entity.InstituicaoId = instituicaoId;
+                }
+                // Opcional: Se quiseres forçar que, se não houver ID manual NEM tenant logado,
+                // e for uma operação normal, deve falhar ou assumir algo, mas a lógica acima
+                // é a mais segura para Seeders.
             }
         }
         return base.SaveChanges();

@@ -2,10 +2,10 @@
 {
     public class UserListDto
     {
-        public int Id { get; set; }
-        public string Nome { get; set; }
-        public string Email { get; set; }
-        public string Role { get; set; }
-        public string NomeInstituicao { get; set; } // O nome, não o ID
+        public Guid Id { get; set; }
+        public string Nome { get; set; }=String.Empty;
+        public string Email { get; set; }=String.Empty;
+        public string Role { get; set; }=String.Empty;
+        public string NomeInstituicao { get; set; }=String.Empty; // O nome, não o ID
     }
 }

@@ -51,7 +51,7 @@ export class AusenciaService {
   /**
    * Aprova ou Rejeita um pedido
    */
-  public responderAusencia(id: number, resposta: ResponderAusenciaRequest): Observable<any> {
+  public responderAusencia(id: string, resposta: ResponderAusenciaRequest): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}/responder`, resposta);
   }
 

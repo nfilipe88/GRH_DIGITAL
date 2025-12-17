@@ -4,14 +4,15 @@ namespace HRManager.WebAPI.DTOs
 {
     public class ColaboradorListDto
     {
-        public int Id { get; set; }
-        public string NomeCompleto { get; set; }
-        public string EmailPessoal { get; set; }
-        public string NIF { get; set; }
-        public string Cargo { get; set; }
-        public string Departamento { get; set; }
-        public Guid? InstituicaoId { get; set; }
-        public string NomeInstituicao { get; set; } // Apenas o nome
+        public Guid Id { get; set; }
+        public string NomeCompleto { get; set; } = string.Empty;
+        // O Serviço estava a chamar 'Email', mas aqui devia ser explícito
+        public string Email { get; set; } = string.Empty;
+        public string Funcao { get; set; } = string.Empty;
+        public string Departamento { get; set; } = string.Empty;
+        // O Serviço tenta preencher 'Status'
         public bool IsAtivo { get; set; }
+        // Campos opcionais se necessários
+        public string? NomeInstituicao { get; set; }
     }
 }

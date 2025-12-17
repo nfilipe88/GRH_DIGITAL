@@ -2,39 +2,63 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Avaliacao } from '../interfaces/Avaliacao';
-import { SubmeterAvaliacaoRequest } from '../interfaces/SubmeterAvaliacaoRequest';
 import { environment } from '../../environments/environment';
+import { RealizarAutoAvaliacaoRequest } from '../interfaces/realizarAutoAvaliacaoRequest';
+import { RealizarAvaliacaoGestorRequest } from '../interfaces/realizarAvaliacaoGestorRequest';
+import { Competencia, CriarCompetenciaRequest, CicloAvaliacao, CriarCicloRequest } from '../interfaces/configuracao-avaliacao';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AvaliacaoService {
   private http = inject(HttpClient);
-  // private apiUrl = 'https://localhost:7234/api/Avaliacoes'; // Ajusta a porta se necessário
   private apiUrl = `${environment.apiUrl}/Avaliacoes`;
-
-  // NOVO: Buscar lista de avaliações da equipa (para o Gestor)
+  // --- LEITURA ---
   getAvaliacoesEquipa(): Observable<Avaliacao[]> {
     return this.http.get<Avaliacao[]>(`${this.apiUrl}/equipa`);
   }
 
-  // --- Buscar MINHAS avaliações (Para Colaborador) ---
   getMinhasAvaliacoes(): Observable<Avaliacao[]> {
     return this.http.get<Avaliacao[]>(`${this.apiUrl}/minhas`);
   }
-  // Buscar uma avaliação específica para preencher (pelo ID da avaliação)
-  // Nota: Terás de criar um endpoint GET /api/Avaliacoes/{id} no Backend se ainda não existir,
-  // ou usar o método que retorna a lista e filtrar.
-  getAvaliacao(id: number): Observable<Avaliacao> {
+
+  getAvaliacao(id: string): Observable<Avaliacao> {
+    // Atenção: O backend precisa de ter este endpoint GET /Avaliacoes/{id}
+    // Se não tiveres criado, terás de usar getMinhasAvaliacoes e filtrar no JS,
+    // ou criar o endpoint GetById no AvaliacoesController.
     return this.http.get<Avaliacao>(`${this.apiUrl}/${id}`);
   }
 
-  // Enviar as notas
-  submeterAvaliacao(id: number, request: SubmeterAvaliacaoRequest): Observable<Avaliacao> {
-    return this.http.put<Avaliacao>(`${this.apiUrl}/${id}/submeter`, request);
+  // --- AÇÕES ---
+  iniciarAvaliacao(colaboradorId: string, cicloId: string): Observable<Avaliacao> {
+      return this.http.post<Avaliacao>(`${this.apiUrl}/iniciar?colaboradorId=${colaboradorId}&cicloId=${cicloId}`, {});
   }
 
-  iniciarAvaliacao(colaboradorId: number, cicloId: number): Observable<Avaliacao> {
-      return this.http.post<Avaliacao>(`${this.apiUrl}/iniciar?colaboradorId=${colaboradorId}&cicloId=${cicloId}`, {});
+  // Ação do Colaborador
+  submeterAutoAvaliacao(id: string, request: RealizarAutoAvaliacaoRequest): Observable<Avaliacao> {
+    return this.http.put<Avaliacao>(`${this.apiUrl}/${id}/auto-avaliacao`, request);
+  }
+
+  // Ação do Gestor
+  submeterAvaliacaoGestor(id: string, request: RealizarAvaliacaoGestorRequest): Observable<Avaliacao> {
+    return this.http.put<Avaliacao>(`${this.apiUrl}/${id}/avaliacao-gestor`, request);
+  }
+
+  // === GESTÃO DE COMPETÊNCIAS ===
+  getCompetencias(): Observable<Competencia[]> {
+    return this.http.get<Competencia[]>(`${this.apiUrl}/competencias`);
+  }
+
+  criarCompetencia(request: CriarCompetenciaRequest): Observable<Competencia> {
+    return this.http.post<Competencia>(`${this.apiUrl}/competencias`, request);
+  }
+
+  // === GESTÃO DE CICLOS ===
+  getCiclos(): Observable<CicloAvaliacao[]> {
+    return this.http.get<CicloAvaliacao[]>(`${this.apiUrl}/ciclos`);
+  }
+
+  criarCiclo(request: CriarCicloRequest): Observable<CicloAvaliacao> {
+    return this.http.post<CicloAvaliacao>(`${this.apiUrl}/ciclos`, request);
   }
 }

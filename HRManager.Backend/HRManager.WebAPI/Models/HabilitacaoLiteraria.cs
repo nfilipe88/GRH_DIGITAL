@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HRManager.WebAPI.Domain.Base;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -15,14 +16,11 @@ namespace HRManager.WebAPI.Models
         Outro
     }
 
-    public class HabilitacaoLiteraria
+    public class HabilitacaoLiteraria : TenantEntity
     {
-        [Key]
-        public int Id { get; set; }
-
         // --- Relação com Colaborador ---
         [Required]
-        public int ColaboradorId { get; set; }
+        public Guid ColaboradorId { get; set; }
 
         [ForeignKey("ColaboradorId")]
         [JsonIgnore] // Evita ciclos ao serializar
@@ -35,11 +33,11 @@ namespace HRManager.WebAPI.Models
 
         [Required]
         [MaxLength(200)]
-        public string Curso { get; set; } // Ex: Engenharia Informática
+        public string Curso { get; set; } = string.Empty; // Ex: Engenharia Informática
 
         [Required]
         [MaxLength(200)]
-        public string InstituicaoEnsino { get; set; } // Ex: Universidade de Luanda
+        public string InstituicaoEnsino { get; set; }=string.Empty; // Ex: Universidade de Luanda
 
         [Required]
         public DateTime DataConclusao { get; set; }

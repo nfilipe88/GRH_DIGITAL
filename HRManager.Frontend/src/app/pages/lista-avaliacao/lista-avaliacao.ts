@@ -36,7 +36,7 @@ export class ListaAvaliacao implements OnInit {
   }
 
   // Navega para a página de realização (aquela que criámos antes)
-  iniciarAvaliacao(id: number) {
+  iniciarAvaliacao(id: string) {
     this.router.navigate(['/avaliacoes/realizar', id]);
   }
 

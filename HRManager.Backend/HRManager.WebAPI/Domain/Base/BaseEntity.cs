@@ -4,11 +4,10 @@ using HRManager.WebAPI.Domain.Interfaces;
 
 namespace HRManager.WebAPI.Domain.Base
 {
-    public abstract class BaseEntity : IHaveTenant
+    public abstract class BaseEntity
     {
         public Guid Id { get; set; }
-        
-        // Propriedade herdada da interface
-        public Guid InstituicaoId { get; set; } 
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
+        public DateTime? DataAtualizacao { get; set; }
     }
 }

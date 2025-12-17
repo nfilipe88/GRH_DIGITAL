@@ -1,7 +1,7 @@
 // *** INTERFACE: O modelo COMPLETO do Colaborador ***
 // Isto é o que recebemos do endpoint GET /api/Colaboradores/{id}
 export interface ColaboradorDetails {
-  id: number;
+  id: string;
   nomeCompleto: string;
   nif: string;
   numeroAgente: number | null;

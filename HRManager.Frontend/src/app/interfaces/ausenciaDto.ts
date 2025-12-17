@@ -1,6 +1,6 @@
 // O que recebemos na lista
 export interface AusenciaDto {
-  id: number;
+  id: string;
   nomeColaborador: string;
   tipo: string; // "Ferias", "Doenca", etc.
   dataInicio: string;

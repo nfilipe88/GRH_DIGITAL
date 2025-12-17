@@ -9,7 +9,6 @@ import { environment } from '../../environments/environment';
 })
 export class NotificacaoService {
   private http = inject(HttpClient);
-  // private apiUrl = 'https://localhost:7234/api/Notificacoes';
   private apiUrl = `${environment.apiUrl}/Notificacoes`;
 
   // Estado reativo para o contador de não lidas
@@ -21,7 +20,7 @@ export class NotificacaoService {
     );
   }
 
-  marcarLida(id: number): Observable<any> {
+  marcarLida(id: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}/ler`, {}).pipe(
       tap(() => {
         // Decrementa localmente para ser rápido

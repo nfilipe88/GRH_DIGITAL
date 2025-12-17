@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PedidoDeclaracaoDto } from '../../interfaces/pedidoDeclaracao';
 import { DeclaracaoService } from '../../services/declaracao.service';
+import { environment } from '../../../environments/environment.prod';
 
 @Component({
   selector: 'app-emissao-declaracoes',
@@ -11,17 +12,10 @@ import { DeclaracaoService } from '../../services/declaracao.service';
   styleUrl: './emissao-declaracoes.css',
 })
 export class EmissaoDeclaracoes implements OnInit {
-
   private declaracaoService = inject(DeclaracaoService);
-  private readonly API_BASE_URL = 'https://localhost:7234';
 
-  public listaPedidos: any[] = [];
-  loading = true;
-
-  // Estado do Modal de Upload
-  public isModalUploadAberto = false;
-  public pedidoEmAnalise: PedidoDeclaracaoDto | null = null;
-  public ficheiroSelecionado: File | null = null;
+  public listaPedidos: PedidoDeclaracaoDto[] = [];
+  public loading = false;
 
   ngOnInit() {
     this.carregarPedidos();
@@ -29,58 +23,57 @@ export class EmissaoDeclaracoes implements OnInit {
 
   carregarPedidos() {
     this.loading = true;
-    this.declaracaoService.getPedidos().subscribe({
-      next: (data) => {
+    this.declaracaoService.getPendentes().subscribe({
+      next: (data: PedidoDeclaracaoDto[]) => {
         this.listaPedidos = data;
         this.loading = false;
       },
-      error: (err) => console.error(err)
+      error: (err: any) => {
+        console.error(err);
+        this.loading = false;
+      }
     });
   }
 
+  aprovarEGerar(pedido: PedidoDeclaracaoDto) {
+    if (!confirm(`Gerar declaração automática para ${pedido.nomeColaborador}?`)) return;
 
-  getDocumentoUrl(caminho: string): string {
-      return `${this.API_BASE_URL}/${caminho}`;
-  }
-  // --- Ações ---
+    this.loading = true;
+    this.declaracaoService.gerarDeclaracao(pedido.id).subscribe({
+      next: (blob: Blob) => {
+        // Criar link para download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Declaracao_${pedido.nomeColaborador}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
 
-  abrirModalUpload(pedido: PedidoDeclaracaoDto) {
-    this.pedidoEmAnalise = pedido;
-    this.ficheiroSelecionado = null;
-    this.isModalUploadAberto = true;
-  }
-
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.ficheiroSelecionado = file;
-    }
-  }
-
-  confirmarUpload() {
-    if (!this.pedidoEmAnalise || !this.ficheiroSelecionado) return;
-
-    this.declaracaoService.resolver(this.pedidoEmAnalise.id, this.ficheiroSelecionado).subscribe({
-      next: () => {
-        alert('Declaração emitida e enviada!');
-        this.isModalUploadAberto = false;
-        this.carregarPedidos();
+        this.loading = false;
+        this.carregarPedidos(); // Atualiza a lista
+        alert('Declaração gerada com sucesso!');
       },
-      error: (err) => alert('Erro no upload: ' + err.error?.message)
+      error: (err: any) => {
+        console.error(err);
+        this.loading = false;
+        alert('Erro ao gerar documento.');
+      }
     });
   }
-
 
   rejeitar(pedido: PedidoDeclaracaoDto) {
-    if (!confirm(`Rejeitar o pedido de ${pedido.nomeColaborador}?`)) return;
+    if (!confirm('Rejeitar este pedido?')) return;
 
-    this.declaracaoService.resolver(pedido.id, null, true).subscribe({
+    this.declaracaoService.atualizarEstado(pedido.id, false).subscribe({
       next: () => {
-        alert('Pedido rejeitado.');
         this.carregarPedidos();
+        alert('Pedido rejeitado.');
       },
-      error: (err) => alert('Erro ao rejeitar: ' + err.error?.message)
+      error: (err: any) => alert('Erro ao rejeitar.')
     });
   }
 
+  getDocumentoUrl(caminho: string): string {
+    return `${environment.apiUrl}/${caminho}`;
+  }
 }

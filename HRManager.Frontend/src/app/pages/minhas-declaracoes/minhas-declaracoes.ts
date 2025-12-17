@@ -4,6 +4,7 @@ import { PedidoDeclaracaoDto } from '../../interfaces/pedidoDeclaracao';
 import { DeclaracaoService } from '../../services/declaracao.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment.prod';
 
 @Component({
   selector: 'app-minhas-declaracoes',
@@ -13,39 +14,50 @@ import { CommonModule } from '@angular/common';
 })
 export class MinhasDeclaracoes implements OnInit {
   private declaracaoService = inject(DeclaracaoService);
-  private readonly API_BASE_URL = 'https://localhost:7234';
 
+  // Variáveis alinhadas com o HTML
   public listaPedidos: PedidoDeclaracaoDto[] = [];
   public dadosFormulario: CriarPedidoDeclaracaoRequest = { tipo: 'FinsBancarios', observacoes: '' };
 
   public isModalAberto = false;
   public feedbackMessage: string | null = null;
+  public loading = false;
 
   ngOnInit() {
     this.carregarPedidos();
   }
 
   carregarPedidos() {
-    this.declaracaoService.getPedidos().subscribe({
-      next: (data) => this.listaPedidos = data,
-      error: (err) => console.error(err)
+    this.declaracaoService.getMinhas().subscribe({
+      next: (data: PedidoDeclaracaoDto[]) => {
+        this.listaPedidos = data;
+      },
+      error: (err: any) => console.error(err)
     });
   }
 
   onSubmit() {
+    if (!this.dadosFormulario.tipo) return;
+
+    this.loading = true;
     this.declaracaoService.solicitar(this.dadosFormulario).subscribe({
       next: () => {
-        this.feedbackMessage = 'Pedido enviado ao RH.';
-        this.carregarPedidos();
+        this.feedbackMessage = 'Pedido enviado com sucesso!';
+        this.loading = false;
         this.isModalAberto = false;
-        this.dadosFormulario = { tipo: 'FinsBancarios', observacoes: '' };
+        this.carregarPedidos();
+        this.dadosFormulario = { tipo: 'FinsBancarios', observacoes: '' }; // Reset
         setTimeout(() => this.feedbackMessage = null, 3000);
       },
-      error: (err) => alert(err.error?.message || 'Erro ao pedir.')
+      error: (err: any) => {
+        alert('Erro ao enviar pedido.');
+        this.loading = false;
+      }
     });
   }
 
+  // Helper para o HTML
   getDocumentoUrl(caminho: string): string {
-    return `${this.API_BASE_URL}/${caminho}`;
+    return `${environment.apiUrl}/${caminho}`; // Ajusta se o caminho vier relativo ou absoluto
   }
 }

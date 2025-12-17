@@ -1,4 +1,5 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
 using HRManager.Application.Interfaces;
 using HRManager.WebAPI.Domain.enums;
 using HRManager.WebAPI.Domain.Interfaces;
@@ -67,20 +68,39 @@ namespace HRManager.WebAPI.Services
                 .ToListAsync();
         }
 
-        public async Task<AusenciaSaldoDto> GetSaldoAsync(string userEmail)
+        public async Task<AusenciaSaldoDto> GetSaldoAsync(string userId)
         {
+            // 1. CORREÇÃO: Validar antes de usar
+            if (string.IsNullOrEmpty(userId))
+                throw new UnauthorizedAccessException("Utilizador não identificado.");
+
+            if (!Guid.TryParse(userId, out var userGuid))
+                throw new ArgumentException("ID de utilizador inválido.");
+
+            // 2. CORREÇÃO: Usar a variável já convertida na Query (evita erros de tradução do LINQ)
             var colaborador = await _context.Colaboradores
-                .FirstOrDefaultAsync(c => c.EmailPessoal == userEmail);
+                .FirstOrDefaultAsync(c => c.UserId == userGuid);
 
             if (colaborador == null)
-                throw new KeyNotFoundException("Colaborador não encontrado.");
+            {
+                // Retorna zerado para não quebrar o Frontend se o colaborador ainda não tiver perfil criado
+                return new AusenciaSaldoDto
+                {
+                    NomeColaborador = "Utilizador sem Perfil",
+                    SaldoFerias = 0,
+                    DiasPendentes = 0
+                };
+            }
 
-            // Calcular dias "em análise" (apenas para Férias)
+            // Calcular dias "em análise"
             var diasPendentes = await _context.Ausencias
                 .Where(a => a.ColaboradorId == colaborador.Id
                             && a.Tipo == TipoAusencia.Ferias
                             && a.Estado == EstadoAusencia.Pendente)
                 .SumAsync(a => (a.DataFim - a.DataInicio).Days + 1);
+
+            // Nota: O SaldoFerias já vem calculado na entidade Colaborador (assumindo que tens lá a lógica)
+            // Se precisares de calcular "Férias Usadas" dinamicamente, podes descomentar a lógica antiga.
 
             return new AusenciaSaldoDto
             {
@@ -89,7 +109,6 @@ namespace HRManager.WebAPI.Services
                 DiasPendentes = diasPendentes
             };
         }
-
         public async Task SolicitarAusenciaAsync(string userEmail, CriarAusenciaRequest request)
         {
             // 1. Recuperar Colaborador
@@ -174,7 +193,7 @@ namespace HRManager.WebAPI.Services
             );
         }
 
-        public async Task ResponderAusenciaAsync(int id, ResponderAusenciaRequest request, string userEmail, bool isGestorRH)
+        public async Task ResponderAusenciaAsync(Guid id, ResponderAusenciaRequest request, string userEmail, bool isGestorRH)
         {
             var ausencia = await _context.Ausencias
                 .Include(a => a.Colaborador)

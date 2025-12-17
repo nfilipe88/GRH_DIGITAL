@@ -3,21 +3,19 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HRManager.WebAPI.Models
 {
-    // User precisa de InstituicaoId, mas não de herdar BaseEntity 
-    // se quisermos um modelo de utilizador mais isolado ou se o Gestor Master 
-    // não pertencer a uma única instituição. Para simplificar, vamos associá-lo.
-    public class User: BaseEntity
+    public class User: TenantEntity
     {
-        [Key]
-        public int Id { get; set; }
-        public string Nome { get; set; } = string.Empty;
+        [Required]
+        public string NomeCompleto { get; set; } = string.Empty;
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
+        [Required]
         public string PasswordHash { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
         public bool IsAtivo { get; set; } = true;
-
-        // Assumindo que o User tem ligação à Instituição (Multi-tenant)
-        public Guid? InstituicaoId { get; set; }
+        // Propriedade de navegação para a Instituição
         public Instituicao? Instituicao { get; set; }
+        // Relacionamento Muitos-para-Muitos com Roles
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     }
 }

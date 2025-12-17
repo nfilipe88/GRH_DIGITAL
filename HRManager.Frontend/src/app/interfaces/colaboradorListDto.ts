@@ -1,5 +1,5 @@
 export interface ColaboradorListDto {
-  id: number;
+  id: string;
   nomeCompleto: string;
   emailPessoal: string;
   nif: string;

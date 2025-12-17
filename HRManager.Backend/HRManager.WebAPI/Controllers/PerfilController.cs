@@ -2,7 +2,6 @@
 using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -30,13 +29,12 @@ namespace HRManager.WebAPI.Controllers
         // Pode receber ?colaboradorId=X. Se não receber, devolve o do próprio utilizador logado.
         // ---
         [HttpGet]
-        public async Task<IActionResult> GetPerfil([FromQuery] int? colaboradorId)
+        public async Task<IActionResult> GetPerfil([FromQuery] Guid? colaboradorId)
         {
             var colaborador = await GetColaboradorAlvo(colaboradorId);
 
             if (colaborador == null) return NotFound(new { message = "Colaborador não encontrado ou sem permissão." });
 
-            // Carregar dados relacionados
             var habilitacoes = await _context.HabilitacoesLiterarias
                 .Where(h => h.ColaboradorId == colaborador.Id)
                 .OrderByDescending(h => h.DataConclusao)
@@ -47,14 +45,13 @@ namespace HRManager.WebAPI.Controllers
                 .OrderByDescending(c => c.DataEmissao)
                 .ToListAsync();
 
-            // Montar DTO
             var perfil = new PerfilDto
             {
                 ColaboradorId = colaborador.Id,
                 NomeCompleto = colaborador.NomeCompleto,
-                Cargo = colaborador.Cargo,
+                // CORREÇÃO: Aceder ao nome do objeto Cargo e tratar nulo
+                Cargo = colaborador.Cargo?.Nome ?? "Sem Cargo",
                 Email = colaborador.EmailPessoal,
-                // *** MAPEAMENTO NOVO ***
                 Morada = colaborador.Morada,
                 IBAN = colaborador.IBAN,
 
@@ -86,7 +83,7 @@ namespace HRManager.WebAPI.Controllers
         // POST: Adicionar Habilitação
         // ---
         [HttpPost("habilitacoes")]
-        public async Task<IActionResult> AddHabilitacao([FromQuery] int? colaboradorId, [FromForm] CriarHabilitacaoRequest request)
+        public async Task<IActionResult> AddHabilitacao([FromQuery] Guid? colaboradorId, [FromForm] CriarHabilitacaoRequest request)
         {
             var colaborador = await GetColaboradorAlvo(colaboradorId);
             if (colaborador == null) return Unauthorized(new { message = "Sem permissão." });
@@ -113,7 +110,7 @@ namespace HRManager.WebAPI.Controllers
         // POST: Adicionar Certificação
         // ---
         [HttpPost("certificacoes")]
-        public async Task<IActionResult> AddCertificacao([FromQuery] int? colaboradorId, [FromForm] CriarCertificacaoRequest request)
+        public async Task<IActionResult> AddCertificacao([FromQuery] Guid? colaboradorId, [FromForm] CriarCertificacaoRequest request)
         {
             var colaborador = await GetColaboradorAlvo(colaboradorId);
             if (colaborador == null) return Unauthorized(new { message = "Sem permissão." });
@@ -140,7 +137,7 @@ namespace HRManager.WebAPI.Controllers
         // DELETE: Remover Habilitação
         // ---
         [HttpDelete("habilitacoes/{id}")]
-        public async Task<IActionResult> DeleteHabilitacao(int id)
+        public async Task<IActionResult> DeleteHabilitacao(Guid id)
         {
             var item = await _context.HabilitacoesLiterarias.FindAsync(id);
             if (item == null) return NotFound();
@@ -181,7 +178,7 @@ namespace HRManager.WebAPI.Controllers
         /// <summary>
         /// Determina qual o colaborador alvo da ação, aplicando regras de segurança.
         /// </summary>
-        private async Task<Colaborador?> GetColaboradorAlvo(int? idSolicitado)
+        private async Task<Colaborador?> GetColaboradorAlvo(Guid? idSolicitado)
         {
             // 1. Se um ID foi pedido (Gestão)
             if (idSolicitado.HasValue)
@@ -235,7 +232,7 @@ namespace HRManager.WebAPI.Controllers
         // PUT: Atualizar Dados Pessoais (Morada, IBAN)
         // ---
         [HttpPut("dados-pessoais")]
-        public async Task<IActionResult> AtualizarDadosPessoais([FromQuery] int? colaboradorId, [FromBody] AtualizarDadosPessoaisRequest request)
+        public async Task<IActionResult> AtualizarDadosPessoais([FromQuery] Guid? colaboradorId, [FromBody] AtualizarDadosPessoaisRequest request)
         {
             var colaborador = await GetColaboradorAlvo(colaboradorId);
             if (colaborador == null) return Unauthorized(new { message = "Sem permissão." });

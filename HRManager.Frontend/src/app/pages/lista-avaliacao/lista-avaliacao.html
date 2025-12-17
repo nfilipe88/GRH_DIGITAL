@@ -38,23 +38,23 @@
 
       <div class="w-full bg-slate-100 rounded-full h-2 mb-4 overflow-hidden">
         <div class="bg-blue-600 h-2 rounded-full transition-all duration-500"
-             [style.width.%]="item.estado === 'Concluida' ? 100 : (item.estado === 'EmAndamento' ? 50 : 0)">
+             [style.width.%]="item.estado === 'Finalizada' ? 100 : (item.estado === 'EmAndamento' ? 50 : 0)">
         </div>
       </div>
 
       <div class="pt-4 border-t border-slate-50 dark:border-slate-700 flex justify-between items-center">
         <div class="text-sm text-slate-500">
-          <span *ngIf="item.notaFinal">Nota: <strong>{{ item.notaFinal | number:'1.1-1' }}</strong></span>
-          <span *ngIf="!item.notaFinal">Sem nota</span>
+          <span *ngIf="item.mediaFinal">Nota: <strong>{{ item.mediaFinal| number:'1.1-1' }}</strong></span>
+          <span *ngIf="!item.mediaFinal">Sem nota</span>
         </div>
 
         <button
           (click)="iniciarAvaliacao(item.id)"
           class="text-sm font-medium px-4 py-2 rounded-lg transition"
-          [ngClass]="item.estado === 'Concluida'
+          [ngClass]="item.estado === 'Finalizada'
             ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-600/30'">
-          {{ item.estado === 'Concluida' ? 'Ver Detalhes' : (item.estado === 'NaoIniciada' ? 'Iniciar Avaliação' : 'Continuar') }}
+          {{ item.estado === 'Finalizada' ? 'Ver Detalhes' : (item.estado === 'NaoIniciada' ? 'Iniciar Avaliação' : 'Continuar') }}
         </button>
       </div>
 

@@ -1,4 +1,6 @@
 ﻿using FluentValidation;
+using HRManager.Application.Interfaces;
+using HRManager.WebAPI.Constants;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
@@ -10,102 +12,103 @@ namespace HRManager.WebAPI.Services
     {
         private readonly HRManagerDbContext _context;
         private readonly ITokenService _tokenService;
+        private readonly ITenantService _tenantService;
 
-        public AuthService(HRManagerDbContext context, ITokenService tokenService)
+        public AuthService(HRManagerDbContext context, ITokenService tokenService, ITenantService tenantService)
         {
             _context = context;
             _tokenService = tokenService;
+            _tenantService = tenantService;
         }
 
         public async Task<string> LoginAsync(LoginRequest request)
         {
-            // 1. Buscar utilizador
             var user = await _context.Users
-                .Include(u => u.Instituicao) // Importante incluir para o Token
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(u => u.Instituicao)
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (user == null)
-                throw new ValidationException("Email ou senha inválidos.");
-
-            // 2. Verificar Senha (CORREÇÃO: BCrypt Verify com strings)
-            // Agora user.PasswordHash é string, então funciona.
-            bool senhaValida = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-
-            if (!senhaValida)
-                throw new ValidationException("Email ou senha inválidos.");
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                throw new UnauthorizedAccessException("Credenciais inválidas.");
 
             if (!user.IsAtivo)
-                throw new ValidationException("Conta inativa. Contacte o administrador.");
+                throw new UnauthorizedAccessException("Conta inativa.");
 
-            // 3. Gerar Token (CORREÇÃO: Passar InstituicaoId)
-            // Se InstituicaoId for null, passamos Guid.Empty ou tratamos conforme a regra do TokenService
-            var instituicaoId = user.InstituicaoId ?? Guid.Empty;
-
-            return _tokenService.GenerateToken(user, instituicaoId, user.Role);
+            return _tokenService.CreateToken(user);
         }
 
-        public async Task<UserListDto> RegisterAsync(RegisterRequest request)
+        public async Task<string> RegisterAsync(RegisterRequest request)
         {
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
-                throw new ValidationException("Este email já está registado.");
+                throw new ValidationException("Este endereço de email já se encontra registado.");
 
-            // CORREÇÃO: BCrypt Hash retorna string, que agora cabe no modelo User
-            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            var instituicaoId = _tenantService.GetInstituicaoId();
 
             var newUser = new User
             {
-                Nome = request.Nome,
+                NomeCompleto = request.Nome,
                 Email = request.Email,
-                PasswordHash = passwordHash,
-                Role = request.Role,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                InstituicaoId = instituicaoId,
                 IsAtivo = true
-                // InstituicaoId: Lógica de atribuição depende do contexto (quem está a criar?)
             };
+
+            var roleName = string.IsNullOrEmpty(request.Role) ? RolesConstants.Colaborador : request.Role;
+            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+            
+            if (role == null) throw new InvalidOperationException($"Role '{roleName}' não encontrada.");
+
+            newUser.UserRoles.Add(new UserRole { Role = role, User = newUser });
 
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            return new UserListDto
-            {
-                Id = newUser.Id,
-                Nome = newUser.Nome,
-                Email = newUser.Email,
-                Role = newUser.Role
-            };
+            return _tokenService.CreateToken(newUser);
         }
-
-        // --- MÉTODOS RESTAURADOS ---
 
         public async Task<UserDetailsDto> GetCurrentUserAsync(string email)
         {
             var user = await _context.Users
                 .Include(u => u.Instituicao)
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null) throw new KeyNotFoundException("Utilizador não encontrado.");
 
+            var roleName = user.UserRoles.FirstOrDefault()?.Role?.Name ?? "N/A";
+
             return new UserDetailsDto
             {
                 Id = user.Id,
-                NomeCompleto = user.Nome,
+                NomeCompleto = user.NomeCompleto,
                 Email = user.Email,
-                Cargo = user.Role, // Mapear Role para Cargo ou ter campo separado
+                Cargo = roleName, 
                 InstituicaoNome = user.Instituicao?.Nome ?? "N/A",
                 IsAtivo = user.IsAtivo
-                // Adicione outros campos conforme necessário no DTO
             };
         }
 
         public async Task<List<UserListDto>> GetAllUsersAsync()
         {
-            // Aqui pode adicionar filtros de segurança (ex: só ver users da minha instituição)
-            return await _context.Users
+            var tenantId = _tenantService.GetTenantId();
+            
+            var query = _context.Users.AsQueryable();
+            if (tenantId != Guid.Empty && tenantId != null)
+            {
+                query = query.Where(u => u.InstituicaoId == tenantId);
+            }
+
+            return await query
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .Select(u => new UserListDto
                 {
                     Id = u.Id,
-                    Nome = u.Nome,
+                    Nome = u.NomeCompleto,
                     Email = u.Email,
-                    Role = u.Role
+                    // CORREÇÃO AQUI: Verificação de nulos em cadeia (CS8602)
+                    Role = u.UserRoles.FirstOrDefault() != null 
+                           ? (u.UserRoles.FirstOrDefault()!.Role != null ? u.UserRoles.FirstOrDefault()!.Role.Name : "N/A") 
+                           : "N/A"
                 })
                 .ToListAsync();
         }

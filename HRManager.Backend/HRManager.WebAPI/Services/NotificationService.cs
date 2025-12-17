@@ -8,28 +8,18 @@ namespace HRManager.WebAPI.Services
     public class NotificationService : INotificationService
     {
         private readonly HRManagerDbContext _context;
-        private readonly ITenantService _tenantService;
 
-        public NotificationService(HRManagerDbContext context, ITenantService tenantService)
+        public NotificationService(HRManagerDbContext context)
         {
             _context = context;
-            _tenantService = tenantService;
         }
 
-        public async Task NotifyUserByEmailAsync(string email, string titulo, string mensagem, string link = null)
+        public async Task NotifyUserByEmailAsync(string email, string titulo, string mensagem, string link)
         {
-            // 1. Encontrar o User
+            if (string.IsNullOrEmpty(email)) return;
+
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null) return; 
-
-            // 2. Determinar o Tenant ID (Prioridade: User > Contexto Atual)
-            // Usa o ID do user se existir, senão tenta o ID da sessão atual
-            var tenantId = user.InstituicaoId ?? _tenantService.GetTenantId();
-
-            // Se ainda assim for null (ex: admin global sem tenant a notificar outro admin), 
-            // usamos Guid.Empty para não dar erro de SQL, ou uma lógica específica.
-            // Aqui assumo que Guid.Empty é seguro ou que existe sempre um tenant.
-            var finalTenantId = tenantId ?? Guid.Empty;
+            if (user == null) return;
 
             var notif = new Notificacao
             {
@@ -39,35 +29,24 @@ namespace HRManager.WebAPI.Services
                 Link = link,
                 DataCriacao = DateTime.UtcNow,
                 Lida = false,
-                InstituicaoId = finalTenantId // 3. Preencher o campo novo
+                InstituicaoId = user.InstituicaoId // Guid
             };
 
             _context.Notificacoes.Add(notif);
             await _context.SaveChangesAsync();
         }
 
-        public async Task NotifyManagersAsync(Guid? instituicaoId, string titulo, string mensagem, string link = null)
+        public async Task NotifyManagersAsync(Guid instituicaoId, string titulo, string mensagem, string link)
         {
-            var query = _context.Users.AsQueryable();
+            // Buscar Users que tenham a Role "Gestor" E pertençam à Instituição
+            var gestores = await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .Where(u => u.InstituicaoId == instituicaoId && 
+                            u.UserRoles.Any(ur => ur.Role.Name == "Gestor"))
+                .ToListAsync();
 
-            if (instituicaoId.HasValue)
-            {
-                query = query.Where(u =>
-                    (u.Role == "GestorRH" && u.InstituicaoId == instituicaoId.Value) ||
-                    u.Role == "GestorMaster");
-            }
-            else
-            {
-                query = query.Where(u => u.Role == "GestorMaster");
-            }
-
-            var gestores = await query.ToListAsync();
-            
-            // Garantir que temos um ID válido para gravar na notificação. 
-            // Se for para Master (instituicaoId null), usamos Guid.Empty ou o ID do próprio gestor se aplicável.
-            var targetTenantId = instituicaoId ?? Guid.Empty; 
-
-            var notificacoes = gestores.Select(g => new Notificacao
+            var notifs = gestores.Select(g => new Notificacao
             {
                 UserId = g.Id,
                 Titulo = titulo,
@@ -75,11 +54,14 @@ namespace HRManager.WebAPI.Services
                 Link = link,
                 DataCriacao = DateTime.UtcNow,
                 Lida = false,
-                InstituicaoId = g.InstituicaoId ?? targetTenantId // Tenta usar o tenant do gestor
-            });
+                InstituicaoId = instituicaoId
+            }).ToList();
 
-            _context.Notificacoes.AddRange(notificacoes);
-            await _context.SaveChangesAsync();
+            if (notifs.Any())
+            {
+                _context.Notificacoes.AddRange(notifs);
+                await _context.SaveChangesAsync();
+            }
         }
         
         public Task EnviarNotificacaoNovoPedido(PedidoDeclaracao pedido)

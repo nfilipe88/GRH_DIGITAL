@@ -4,15 +4,16 @@ namespace HRManager.WebAPI.DTOs
 {
     public class AvaliacaoDto
     {
-        public int Id { get; set; }
-        public string NomeColaborador { get; set; }
-        public string NomeGestor { get; set; }
-        public string NomeCiclo { get; set; }
+        public Guid Id { get; set; }
+        public string NomeColaborador { get; set; } = string.Empty;
+        public string NomeGestor { get; set; } = string.Empty;
+        public string NomeCiclo { get; set; }  = string.Empty;
         public EstadoAvaliacao Estado { get; set; } // NaoIniciada, EmCurso, Concluida...
         public decimal? NotaFinal { get; set; }
         public DateTime? DataConclusao { get; set; }
 
         // Lista de Itens (Perguntas e Respostas)
         public List<AvaliacaoItemDto> Itens { get; set; } = new();
+        public string? ComentarioFinalGestor { get; set; }
     }
 }

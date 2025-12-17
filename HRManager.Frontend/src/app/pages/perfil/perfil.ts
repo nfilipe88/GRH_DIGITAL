@@ -77,7 +77,7 @@ export class Perfil implements OnInit {
     });
   }
 
-  deleteHabilitacao(id: number): void {
+  deleteHabilitacao(id: string): void {
     if(!confirm('Tem a certeza?')) return;
     this.perfilService.deleteHabilitacao(id).subscribe({
       next: () => this.carregarPerfil(),
@@ -108,7 +108,7 @@ export class Perfil implements OnInit {
     });
   }
 
-  deleteCertificacao(id: number): void {
+  deleteCertificacao(id: string): void {
     if(!confirm('Tem a certeza?')) return;
     this.perfilService.deleteCertificacao(id).subscribe({
       next: () => this.carregarPerfil(),

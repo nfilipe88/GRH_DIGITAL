@@ -18,34 +18,51 @@
   </div>
 
   <div class="space-y-6">
-    <div *ngFor="let item of avaliacao.itens; let i = index"
+    <div *ngFor="let item of avaliacao!.itens; let i = index"
          class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition hover:shadow-md">
 
       <div class="mb-4">
         <h3 class="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
           <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded">{{ i + 1 }}</span>
-          {{ item.tituloCompetencia }}
+          {{ item.nomeCompetencia || 'Competência' }}
         </h3>
         <p class="text-slate-500 text-sm mt-1">{{ item.descricaoCompetencia }}</p>
       </div>
 
-      <div class="flex flex-wrap gap-2 mb-4">
-        <button *ngFor="let nota of [1, 2, 3, 4, 5]"
-                type="button"
-                (click)="item.notaGestor = nota"
-                class="w-12 h-12 rounded-full font-bold text-lg transition flex items-center justify-center border-2"
-                [ngClass]="item.notaGestor === nota
-                  ? 'bg-blue-600 text-white border-blue-600 scale-110 shadow-lg ring-2 ring-blue-200'
-                  : 'bg-white text-slate-400 border-slate-200 hover:border-blue-300 hover:text-blue-500'">
-          {{ nota }}
-        </button>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Autoavaliação</span>
+            <div class="flex items-center gap-2">
+                <div class="font-bold text-slate-700" [ngClass]="{'text-gray-400 italic': !item.notaAutoAvaliacao}">
+                    {{ item.notaAutoAvaliacao ? (item.notaAutoAvaliacao + ' / 5') : 'Não avaliado' }}
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 italic mt-2">"{{ item.justificativaColaborador || 'Sem comentário.' }}"</p>
+        </div>
+
+        <div>
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 block">Sua Nota</span>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button *ngFor="let nota of [1, 2, 3, 4, 5]"
+                        type="button"
+                        (click)="item.notaGestor = nota"
+                        class="w-10 h-10 rounded-full font-bold text-sm transition flex items-center justify-center border-2"
+                        [ngClass]="item.notaGestor === nota
+                        ? 'bg-blue-600 text-white border-blue-600 scale-110 shadow-md'
+                        : 'bg-white text-slate-400 border-slate-200 hover:border-blue-300 hover:text-blue-500'">
+                {{ nota }}
+                </button>
+            </div>
+
+            <textarea
+                [(ngModel)]="item.justificativaGestor"
+                placeholder="O seu feedback..."
+                class="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
+                rows="2"></textarea>
+        </div>
       </div>
 
-      <textarea
-        [(ngModel)]="item.comentario"
-        placeholder="Justifique a nota ou adicione observações..."
-        class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
-        rows="2"></textarea>
     </div>
   </div>
 

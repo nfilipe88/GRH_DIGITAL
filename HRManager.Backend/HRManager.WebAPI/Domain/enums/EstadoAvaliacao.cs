@@ -2,10 +2,11 @@
 {
     public enum EstadoAvaliacao
     {
-        NaoIniciada,        // Criada mas ninguém tocou
-        AutoAvaliacao,      // Colaborador está a preencher
-        EmAndamento,
         AnaliseGestor,      // Colaborador submeteu, Gestor a preencher
+        AutoAvaliacao,      // Colaborador está a preencher
+        Cancelada,
+        EmAndamento,
+        NaoIniciada,        // Criada mas ninguém tocou
         Finalizada          // Gestor fechou
     }
 }

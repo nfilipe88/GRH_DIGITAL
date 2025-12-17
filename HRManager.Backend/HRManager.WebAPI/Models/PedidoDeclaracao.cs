@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using HRManager.WebAPI.Domain.Base;
 
 namespace HRManager.WebAPI.Models
 {
@@ -15,38 +16,21 @@ namespace HRManager.WebAPI.Models
 
     public enum EstadoPedidoDeclaracao
     {
+        Aprovado,
         Pendente,
         Concluido, // O documento já foi emitido e carregado
         Rejeitado
     }
 
-    public class PedidoDeclaracao
+    public class PedidoDeclaracao : BaseEntity
     {
-        [Key]
-        public int Id { get; set; }
-
-        // --- Quem pediu? ---
-        [Required]
-        public int ColaboradorId { get; set; }
-
-        [ForeignKey("ColaboradorId")]
-        public virtual Colaborador Colaborador { get; set; }
-
-        // --- O que pediu? ---
-        [Required]
-        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public Guid ColaboradorId { get; set; }
+        public Colaborador Colaborador { get; set; } = null!;
         public TipoDeclaracao Tipo { get; set; }
-
-        [MaxLength(500)]
-        public string? Observacoes { get; set; } // Ex: "Preciso que mencione o salário anual"
-
-        // --- Estado e Resolução ---
-        public DateTime DataSolicitacao { get; set; } = DateTime.UtcNow;
+        public string? Observacoes { get; set; }
+        public EstadoPedidoDeclaracao Estado { get; set; }
+        public DateTime DataSolicitacao { get; set; }
         public DateTime? DataConclusao { get; set; }
-
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public EstadoPedidoDeclaracao Estado { get; set; } = EstadoPedidoDeclaracao.Pendente;
-
         // --- O Documento Final ---
         [MaxLength(500)]
         public string? CaminhoFicheiro { get; set; } // O PDF final carregado pelo RH

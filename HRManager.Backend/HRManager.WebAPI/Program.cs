@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using HRManager.Application.Interfaces;
 using HRManager.WebAPI.Domain.Interfaces;
+using HRManager.WebAPI.Middlewares;
 using HRManager.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -9,23 +10,25 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
 
 // 1. Adicionar o serviço CORS
 const string AllowAngularOrigin = "_allowAngularOrigin";
+// Lê os URLs do ficheiro de configuração
+var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: AllowAngularOrigin,
                       policy =>
                       {
-                          // **IMPORTANTE:** Mudar para o domínio de produção quando o deploy for feito.
-                          // Para desenvolvimento local:
-                          policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
+                          policy.WithOrigins(allowedOrigins) // Usa a lista dinâmica
                                 .AllowAnyHeader()
                                 .AllowAnyMethod()
-                                .AllowCredentials(); // Permite cookies/cabeçalhos de autorização
+                                .AllowCredentials();
                       });
 });
 
@@ -95,25 +98,48 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IInstituicaoService, InstituicaoService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IAvaliacaoService, AvaliacaoService>();
+builder.Services.AddScoped<IDeclaracaoService, DeclaracaoService>();
 builder.Services.AddFluentValidationAutoValidation();
 //builder.Services.AddValidatorsFromAssemblyContaining<CriarColaboradorValidator>(); // Regista todos os validadores
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // Regista todos os validadores automaticamente
 
 var app = builder.Build();
 
+// --- BLOCO DE SEED OBRIGATÓRIO ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<HRManagerDbContext>();
+        context.Database.Migrate(); // Aplica migrações pendentes
+
+        // Executa o seed
+        HRManager.WebAPI.Data.DbSeeder.Seed(context);
+        Console.WriteLine("✅ Seed da Base de Dados executado com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Erro ao executar o Seed: {ex.Message}");
+    }
+}
+
+app.Use(async (context, next) =>
+{
+    Console.WriteLine($"Request: {context.Request.Path}");
+    await next();
+});
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    // app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseHttpsRedirection();
 app.UseCors(AllowAngularOrigin);
-// Adicionar o middleware de Autenticação e Autorização
-// *** ADICIONE ESTA LINHA ***
 app.UseStaticFiles(); // Permite aceder à pasta wwwroot
 app.UseAuthentication();
 app.UseAuthorization();

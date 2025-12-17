@@ -1,28 +1,21 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using HRManager.WebAPI.Domain.Base;
 
 namespace HRManager.WebAPI.Models
 {
-    public class Notificacao
+    public class Notificacao : TenantEntity
     {
-        [Key]
-        public int Id { get; set; }
-
-        // Quem recebe a notificação? (Ligação ao User de Login)
-        [Required]
-        public int UserId { get; set; }
-
-        // Detalhes
-        [Required]
-        public string Titulo { get; set; } // Ex: "Pedido de Férias"
 
         [Required]
-        public string Mensagem { get; set; } // Ex: "O João pediu 5 dias."
-
-        public string? Link { get; set; } // Ex: "/gestao-ausencias" (Para onde ir ao clicar)
-
+        public Guid UserId { get; set; }
+        public User? User { get; set; }
+        [Required]
+        public string Titulo { get; set; } = string.Empty;
+        [Required]
+        public string Mensagem { get; set; } = string.Empty;
+        public string? Link { get; set; }
         public bool Lida { get; set; } = false;
-
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
-        public Guid InstituicaoId { get; internal set; }
     }
 }
