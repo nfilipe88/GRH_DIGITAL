@@ -1,4 +1,4 @@
-export interface AvaliacaoItem {
+export interface AvaliacaoItemDto {
   id: string;
   tituloCompetencia: string;
   competenciaId: string;

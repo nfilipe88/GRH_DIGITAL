@@ -16,6 +16,5 @@ namespace HRManager.WebAPI.Models
         public string Mensagem { get; set; } = string.Empty;
         public string? Link { get; set; }
         public bool Lida { get; set; } = false;
-        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
     }
 }

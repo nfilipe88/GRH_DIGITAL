@@ -40,8 +40,8 @@ namespace HRManager.WebAPI.Migrations
                     Endereco = table.Column<string>(type: "text", nullable: false),
                     Telemovel = table.Column<int>(type: "integer", nullable: true),
                     EmailContato = table.Column<string>(type: "text", nullable: false),
-                    DataCriacao = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     IsAtiva = table.Column<bool>(type: "boolean", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     DataAtualizacao = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
                 },
                 constraints: table =>
@@ -280,8 +280,8 @@ namespace HRManager.WebAPI.Migrations
                     Estado = table.Column<int>(type: "integer", nullable: false),
                     MediaFinal = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     ComentarioFinalGestor = table.Column<string>(type: "text", nullable: true),
-                    DataCriacao = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     DataConclusao = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    DataCriacao = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     DataAtualizacao = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     InstituicaoId = table.Column<Guid>(type: "uuid", nullable: false)
                 },

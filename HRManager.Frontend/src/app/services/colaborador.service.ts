@@ -5,6 +5,7 @@ import { Colaborador } from '../interfaces/colaborador';
 import { ColaboradorDetails } from '../interfaces/colaboradorDetails';
 import { CriarColaboradorRequest } from '../interfaces/criarColaboradorRequest';
 import { environment } from '../../environments/environment';
+import { UserDetailsDto } from '../interfaces/userDetailsDto';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,6 @@ export class ColaboradorService {
   constructor(private http: HttpClient) { }
 
   /**
-   * *** NOVO MÉTODO ***
    * Busca a lista de todos os colaboradores
    */
   public getColaboradores(): Observable<Colaborador[]> {
@@ -57,5 +57,16 @@ export class ColaboradorService {
   // ---
   public deletarColaborador(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
+
+  // ADICIONAR: Método para desativar
+  desativar(id: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/desativar`, {});
+  }
+
+  // ADICIONAR: Método para transferir equipa
+  transferirEquipa(gestorAntigoId: string, gestorNovoId: string): Observable<any> {
+    // Passamos via Query Params conforme definimos no Controller C#
+    return this.http.put(`${this.apiUrl}/transferir-equipa?gestorAntigoId=${gestorAntigoId}&gestorNovoId=${gestorNovoId}`, {});
   }
 }

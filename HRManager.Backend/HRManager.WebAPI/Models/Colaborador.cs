@@ -28,12 +28,14 @@ namespace HRManager.WebAPI.Models
         // Cargo (Obrigatório)
         public Guid CargoId { get; set; }
         public Cargo? Cargo { get; set; }
-        // User (Opcional no início, mas idealmente 1:1)
         public Guid? UserId { get; set; }
         public User? User { get; set; }
         // Gestor (Hierarquia - Opcional pois o chefe máximo não tem gestor)
         public Guid? GestorId { get; set; }
+        [ForeignKey("CargoId")]
         public Colaborador? Gestor { get; set; }
+        // Opcional: Para facilitar a navegação inversa (quem são os meus subordinados?)
+        public ICollection<Colaborador> Subordinados { get; set; } = new List<Colaborador>();
         public Instituicao? Instituicao { get; set; }
 
         // --- Outros Dados ---
@@ -42,7 +44,7 @@ namespace HRManager.WebAPI.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal? SalarioBase { get; set; }
         [MaxLength(100)]
-        public string? Departamento { get; set; } = "Geral";
+        public string Departamento { get; set; } = "Geral";
         [MaxLength(100)]
         public string Localizacao { get; set; } = "Sede";
         [MaxLength(200)]

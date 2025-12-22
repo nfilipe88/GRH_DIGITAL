@@ -28,7 +28,7 @@
           </div>
           <div>
             <h3 class="font-semibold text-slate-800 dark:text-white">{{ item.nomeColaborador }}</h3>
-            <p class="text-xs text-slate-500 truncate">{{ item.nomeCiclo }}</p>
+            <p class="text-xs text-slate-500 truncate">{{ item?.ciclo?.nome }}</p>
           </div>
         </div>
         <span class="text-xs px-2 py-1 rounded-md border font-medium" [ngClass]="getEstadoClass(item.estado)">

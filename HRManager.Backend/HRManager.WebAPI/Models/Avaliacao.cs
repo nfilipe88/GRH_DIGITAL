@@ -17,7 +17,6 @@ namespace HRManager.WebAPI.Models
         public EstadoAvaliacao Estado { get; set; } = EstadoAvaliacao.NaoIniciada;
         public decimal? MediaFinal { get; set; }
         public string? ComentarioFinalGestor { get; set; }
-        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime? DataConclusao { get; set; }
         public virtual ICollection<AvaliacaoItem> Itens { get; set; } = new List<AvaliacaoItem>();
     }

@@ -6,7 +6,7 @@ namespace HRManager.WebAPI.DTOs
     {
         [Required]
         [MaxLength(100)]
-        public string Nome { get; set; } //Ex: "Avaliação 2024"
+        public string Nome { get; set; } = string.Empty; //Ex: "Avaliação 2024"
 
         [Required]
         public DateTime DataInicio { get; set; }

@@ -14,7 +14,7 @@ namespace HRManager.WebAPI.Services
             _context = context;
         }
 
-        public async Task NotifyUserByEmailAsync(string email, string titulo, string mensagem, string link)
+        public async Task NotifyUserByEmailAsync(string email, string titulo, string mensagem, string? link = null)
         {
             if (string.IsNullOrEmpty(email)) return;
 
@@ -36,7 +36,7 @@ namespace HRManager.WebAPI.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task NotifyManagersAsync(Guid instituicaoId, string titulo, string mensagem, string link)
+        public async Task NotifyManagersAsync(Guid instituicaoId, string titulo, string mensagem, string? link = null)
         {
             // Buscar Users que tenham a Role "Gestor" E pertençam à Instituição
             var gestores = await _context.Users

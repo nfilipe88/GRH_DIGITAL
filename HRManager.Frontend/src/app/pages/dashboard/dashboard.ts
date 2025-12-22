@@ -1,61 +1,57 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
-import { DashboardService } from '../../services/dashboard.service';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NgxChartsModule, Color, ScaleType } from '@swimlane/ngx-charts';
+import { RouterModule } from '@angular/router';
+import { NgxChartsModule, Color, ScaleType } from '@swimlane/ngx-charts'; // Importação do gráfico
+import { DashboardService } from '../../services/dashboard.service';
 import { DashboardStats } from '../../interfaces/dashboard-stats';
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgxChartsModule, RouterLink],
-  templateUrl: './dashboard.html',
-  styleUrls: ['./dashboard.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  standalone: true,
+  imports: [CommonModule, RouterModule, NgxChartsModule],
+  templateUrl: './dashboard.html'
 })
 export class Dashboard implements OnInit {
-private dashboardService = inject(DashboardService);
-  private cdr = inject(ChangeDetectorRef); // CORREÇÃO 2: Injetar ChangeDetectorRef
 
+  isLoading: boolean = true;
   stats: DashboardStats | null = null;
 
-  // --- Configurações do Gráfico ---
+  // Variável para alimentar o gráfico (Lista de objetos {name, value})
   chartData: any[] = [];
 
-  view: [number, number] = [0, 0];
-  showLegend: boolean = true;
-  showLabels: boolean = true;
-  isDoughnut: boolean = false;
-
+  // Cores do gráfico (Estilo "Cool")
   colorScheme: Color = {
-    name: 'customScheme',
+    name: 'cool',
     selectable: true,
     group: ScaleType.Ordinal,
-    domain: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+    domain: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
   };
 
-  ngOnInit() {
-    this.carregarDados();
+  constructor(private dashboardService: DashboardService) {}
+
+  ngOnInit(): void {
+    this.loadStats();
   }
 
-  carregarDados() {
+  loadStats() {
+    this.isLoading = true;
     this.dashboardService.getStats().subscribe({
       next: (data) => {
         this.stats = data;
-        this.processarDadosGrafico(data.colaboradoresPorDepartamento);
+        this.isLoading = false;
 
-        // CORREÇÃO 3: Avisar o Angular que os dados mudaram e ele deve atualizar a view
-        this.cdr.markForCheck();
+        // Se for gestor e tiver dados de departamentos, prepara o gráfico
+        if (this.stats.isVisaoGestor && this.stats.colaboradoresPorDepartamento) {
+          this.chartData = this.stats.colaboradoresPorDepartamento.map(d => ({
+            name: d.nome,
+            value: d.quantidade
+          }));
+        }
       },
-      error: (err) => console.error('Erro ao carregar dashboard', err)
+      error: (err) => {
+        console.error('Erro ao carregar dashboard', err);
+        this.isLoading = false;
+      }
     });
-  }
-
-  private processarDadosGrafico(dadosDict: { [key: string]: number }) {
-    if (!dadosDict) return;
-
-    this.chartData = Object.keys(dadosDict).map(key => ({
-      name: key,
-      value: dadosDict[key]
-    }));
   }
 }

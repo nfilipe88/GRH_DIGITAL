@@ -4,7 +4,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { CommonModule } from '@angular/common';
 import { Notificacao } from '../../interfaces/notificacao';
 import { NotificacaoService } from '../../services/notificacao.service';
-import { UserDetails } from '../../interfaces/userDetailsDto';
+import { UserDetailsDto } from '../../interfaces/userDetailsDto';
 
 @Component({
   selector: 'app-topbar',
@@ -44,12 +44,12 @@ export class Topbar {
     // Nota: Idealmente o AuthService teria um método getUserDetails(), mas usamos o que temos
     // *** LÓGICA REAL DE UTILIZADOR ***
     this.authService.getUserDetails().subscribe({
-      next: (user: UserDetails) => {
+      next: (user: UserDetailsDto) => {
         this.userEmail = user.email;
         this.userInitial = user.email.charAt(0).toUpperCase();
 
         // Construir subtítulo (ex: "GestorMaster" ou "GestorRH - TechCorp")
-        this.userRoleAndInst = user.role;
+        this.userRoleAndInst = user.roles.join(', ');
         if (user.nomeInstituicao) {
           this.userRoleAndInst += ` • ${user.nomeInstituicao}`;
         }

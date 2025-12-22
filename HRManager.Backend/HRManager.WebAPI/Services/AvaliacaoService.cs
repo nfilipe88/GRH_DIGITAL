@@ -185,6 +185,16 @@ namespace HRManager.WebAPI.Services
         public async Task<Competencia> CriarCompetenciaAsync(CriarCompetenciaRequest request)
         {
             var tenantId = _tenantService.GetInstituicaoId(); // Garante segurança
+            //var tenantId = _tenantService.TenantId;
+
+            // 1. Validação de Segurança: O Tenant existe?
+            var instituicaoExiste = await _context.Instituicoes
+                                                  .AnyAsync(i => i.Id == tenantId);
+
+            if (!instituicaoExiste)
+            {
+                throw new KeyNotFoundException($"A instituição (ID: {tenantId}) associada ao utilizador não foi encontrada.");
+            }
 
             var novaCompetencia = new Competencia
             {
@@ -312,7 +322,7 @@ namespace HRManager.WebAPI.Services
         }
 
         // Método auxiliar privado para buscar ID com includes (evita repetição)
-        private async Task<AvaliacaoDto> GetAvaliacaoPorIdInternalAsync(Guid id)
+        public async Task<AvaliacaoDto> GetAvaliacaoPorIdInternalAsync(Guid id)
         {
             var avaliacao = await _context.Avaliacoes
                .Include(a => a.Colaborador)
@@ -325,6 +335,36 @@ namespace HRManager.WebAPI.Services
             return MapToDto(avaliacao);
         }
 
+        public async Task<AvaliacaoDto> GetAvaliacaoPorIdAsync(Guid id, string emailSolicitante)
+        {
+            // 1. Buscar a avaliação com todos os detalhes necessários
+            var avaliacao = await _context.Avaliacoes
+                .Include(a => a.Colaborador)
+                .Include(a => a.Ciclo)
+                .Include(a => a.Itens).ThenInclude(i => i.Competencia)
+                .Include(a => a.Gestor)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (avaliacao == null) throw new KeyNotFoundException("Avaliação não encontrada.");
+
+            // 2. Identificar quem está a pedir
+            var userSolicitante = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailSolicitante);
+            if (userSolicitante == null) throw new UnauthorizedAccessException("Utilizador não identificado.");
+
+            // 3. Verificação de Segurança (Regras de Negócio)
+            bool isGestor = avaliacao.GestorId == userSolicitante.Id;
+            bool isColaborador = avaliacao.Colaborador.EmailPessoal == emailSolicitante;
+
+            // Se não for nem o dono da avaliação nem o gestor dela, BLOQUEIA.
+            if (!isGestor && !isColaborador)
+            {
+                // Podes adicionar aqui: || userSolicitante.Role == "GestorMaster" se quiseres que o Admin veja tudo
+                throw new UnauthorizedAccessException("Não tem permissão para visualizar esta avaliação.");
+            }
+
+            // 4. Retornar DTO (Se for colaborador, esconde as notas do gestor até estar finalizada)
+            return MapToDto(avaliacao, isCollaboratorView: isColaborador);
+        }
         // Helper MapToDto Atualizado
         private static AvaliacaoDto MapToDto(Avaliacao a, bool isCollaboratorView = false)
         {

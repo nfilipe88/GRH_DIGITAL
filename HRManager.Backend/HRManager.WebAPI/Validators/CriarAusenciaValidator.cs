@@ -6,10 +6,6 @@ namespace HRManager.WebAPI.Validators
 {
     public class CriarAusenciaValidator : AbstractValidator<CriarAusenciaRequest>
     {
-        // Precisamos do contexto para validações complexas de banco de dados (ex: conflito de datas)
-        private readonly HRManagerDbContext _context;
-        private readonly string _userEmail;
-
         // Nota: Para injetar serviços no Validator, a configuração no Program.cs precisa ser cuidadosa,
         // mas para regras simples (datas) não precisamos do contexto. 
         // Para regras de conflito (Query ao banco), o ideal é fazer no Service layer OU usar validação assíncrona.

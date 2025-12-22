@@ -8,7 +8,7 @@ namespace HRManager.WebAPI.Models
     public class Competencia : TenantEntity
     {
         [Required]
-        public string Nome { get; set; } // Ex: "Proatividade"
+        public string Nome { get; set; } = string.Empty; // Ex: "Proatividade"
 
         public string? Descricao { get; set; } // Ex: "Capacidade de antecipar problemas..."
 

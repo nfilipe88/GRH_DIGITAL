@@ -59,6 +59,12 @@ public class HRManagerDbContext : DbContext
             .Property(c => c.SalarioBase)
             .HasColumnType("decimal(18,2)");
 
+        modelBuilder.Entity<Colaborador>()
+            .HasOne(c => c.Gestor)
+            .WithMany(g => g.Subordinados)
+            .HasForeignKey(c => c.GestorId)
+            .OnDelete(DeleteBehavior.Restrict); // IMPEDE que apagar o Chefe apague a equipa
+
         modelBuilder.Entity<Avaliacao>()
             .Property(a => a.MediaFinal)
             .HasColumnType("decimal(18,2)");

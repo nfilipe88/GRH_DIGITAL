@@ -55,6 +55,21 @@ namespace HRManager.WebAPI.Controllers
             return NoContent();
         }
 
+        [HttpPut("transferir-equipa")]
+        [Authorize(Roles = "GestorRH,GestorMaster")]
+        public async Task<IActionResult> TransferirEquipa([FromQuery] Guid gestorAntigoId, [FromQuery] Guid gestorNovoId)
+        {
+            try
+            {
+                await _colaboradorService.TransferirEquipaAsync(gestorAntigoId, gestorNovoId);
+                return Ok(new { message = "Equipa transferida com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         // ---
         // MÉTODO DELETE (Eliminar)
         // Mapeado para: DELETE api/Colaboradores/{id}

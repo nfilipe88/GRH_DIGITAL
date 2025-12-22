@@ -6,17 +6,11 @@ namespace HRManager.WebAPI.Domain.Interfaces
     public interface IColaboradorService
     {
         Task<List<ColaboradorListDto>> GetAllAsync();
-
-        // Alterado int -> Guid
         Task<ColaboradorListDto?> GetByIdAsync(Guid id);
-
-        // Alterado retorno para corresponder ao Service
-        Task<Colaborador> CreateAsync(CriarColaboradorRequest request);
-
-        // Alterado int -> Guid
+        Task<ColaboradorDto> CreateAsync(CriarColaboradorRequest request);
         Task<bool> UpdateAsync(Guid id, AtualizarDadosPessoaisRequest request);
-
-        // Alterado int -> Guid
         Task ToggleAtivoAsync(Guid id);
+        Task DesativarColaboradorAsync(Guid colaboradorId);
+        Task TransferirEquipaAsync(Guid gestorAntigoId, Guid gestorNovoId);
     }
 }

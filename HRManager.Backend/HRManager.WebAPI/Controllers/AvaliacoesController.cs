@@ -1,9 +1,7 @@
-﻿using FluentValidation;
-using HRManager.WebAPI.Constants;
+﻿using HRManager.WebAPI.Constants;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -21,12 +19,30 @@ namespace HRManager.WebAPI.Controllers
             _avaliacaoService = avaliacaoService;
         }
 
+        [HttpPost("ciclos")]
+        [Authorize(Roles = RolesConstants.ApenasGestores)]
+        public async Task<IActionResult> CriarCiclo([FromBody] CriarCicloRequest request)
+        {
+            var criado = await _avaliacaoService.CriarCicloAsync(request);
+            return Created("", criado);
+        }
+
         [HttpPost("competencias")]
         [Authorize(Roles = RolesConstants.ApenasGestores)]
         public async Task<IActionResult> CriarCompetencia([FromBody] CriarCompetenciaRequest request)
         {
             var criada = await _avaliacaoService.CriarCompetenciaAsync(request);
             return Created("", criada);
+        }
+
+
+        [HttpPost("iniciar")]
+        [Authorize(Roles = RolesConstants.ApenasGestores)]
+        public async Task<IActionResult> IniciarAvaliacao(Guid colaboradorId, Guid cicloId)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var result = await _avaliacaoService.IniciarAvaliacaoAsync(colaboradorId, cicloId, email);
+            return Ok(result);
         }
 
         [HttpGet("competencias")]
@@ -37,14 +53,6 @@ namespace HRManager.WebAPI.Controllers
             return Ok(lista);
         }
 
-        [HttpPost("ciclos")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)]
-        public async Task<IActionResult> CriarCiclo([FromBody] CriarCicloRequest request)
-        {
-            var criado = await _avaliacaoService.CriarCicloAsync(request);
-            return Created("", criado);
-        }
-
         [HttpGet("ciclos")]
         public async Task<IActionResult> ListarCiclos()
         {
@@ -53,15 +61,6 @@ namespace HRManager.WebAPI.Controllers
         }
 
         // --- Processo de Avaliação ---
-
-        [HttpPost("iniciar")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)]
-        public async Task<IActionResult> IniciarAvaliacao(Guid colaboradorId, Guid cicloId)
-        {
-            var email = User.FindFirstValue(ClaimTypes.Email);
-            var result = await _avaliacaoService.IniciarAvaliacaoAsync(colaboradorId, cicloId, email);
-            return Ok(result);
-        }
 
         [HttpGet("minhas")]
         public async Task<IActionResult> GetMinhasAvaliacoes()
@@ -81,18 +80,27 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetAvaliacaoPorId(int id)
+        public async Task<IActionResult> GetAvaliacaoPorId(Guid id)
         {
-            // TODO: O serviço deve validar se o user tem permissão para ver ESTA avaliação específica
-            // Por agora, assumimos que o serviço faz essa verificação ou retornamos apenas dados seguros
             var email = User.FindFirstValue(ClaimTypes.Email);
-            // Implementar método no serviço: GetAvaliacaoDetalheAsync(id, emailSolicitante)
-            // Para já, retornamos Ok se não houver erro
-            return Ok();
+
+            try
+            {
+                var result = await _avaliacaoService.GetAvaliacaoPorIdAsync(id, email);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("Avaliação não encontrada.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
 
         [HttpPut("{id}/auto-avaliacao")]
-        public async Task<IActionResult> SubmeterAutoAvaliacao(Guid id, [FromBody] RealizarAutoAvaliacaoRequest request)
+        public async Task<IActionResult> RealizarAutoAvaliacao(Guid id, [FromBody] RealizarAutoAvaliacaoRequest request)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
             // Middleware trata UnauthorizedAccessException se tentar editar a de outro

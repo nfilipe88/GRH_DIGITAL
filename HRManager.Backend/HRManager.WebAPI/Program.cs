@@ -7,6 +7,7 @@ using HRManager.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -124,11 +125,30 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+//app.Use(async (context, next) =>
+//{
+//    Console.WriteLine($"Request: {context.Request.Path}");
+//    await next();
+//});
 app.Use(async (context, next) =>
 {
     Console.WriteLine($"Request: {context.Request.Path}");
+    Console.WriteLine($"User authenticated: {context.User?.Identity?.IsAuthenticated}");
+
+    if (context.User?.Identity?.IsAuthenticated == true)
+    {
+        var tenantClaim = context.User.FindFirst("tenantId");
+        Console.WriteLine($"TenantId in token: {tenantClaim?.Value}");
+
+        var roles = context.User.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value);
+        Console.WriteLine($"Roles: {string.Join(", ", roles)}");
+    }
+
     await next();
 });
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

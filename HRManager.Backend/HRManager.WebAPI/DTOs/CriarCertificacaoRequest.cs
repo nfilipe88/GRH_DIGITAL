@@ -5,10 +5,10 @@ namespace HRManager.WebAPI.DTOs
     public class CriarCertificacaoRequest
     {
         [Required]
-        public string NomeCertificacao { get; set; }
+        public string NomeCertificacao { get; set; } = string.Empty;
 
         [Required]
-        public string EntidadeEmissora { get; set; }
+        public string EntidadeEmissora { get; set; } = string.Empty;
 
         [Required]
         public DateTime DataEmissao { get; set; }

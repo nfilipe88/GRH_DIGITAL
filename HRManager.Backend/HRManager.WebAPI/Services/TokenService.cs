@@ -22,13 +22,19 @@ namespace HRManager.WebAPI.Services
         public string CreateToken(User user)
         {
             var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString())
-            };
+        {
+            new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""), // Garante string vazia se nulo
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString())
+        };
 
-            // ADICIONAR ROLES
+            // CORREÇÃO: User.InstituicaoId é um Guid, não Guid?. Verificamos se não é Empty.
+            if (user.InstituicaoId != Guid.Empty)
+            {
+                // CORREÇÃO: Removemos .Value (pois não é anulável)
+                claims.Add(new Claim("tenantId", user.InstituicaoId.ToString()));
+            }
+
             if (user.UserRoles != null)
             {
                 foreach (var ur in user.UserRoles)
@@ -38,12 +44,6 @@ namespace HRManager.WebAPI.Services
                         claims.Add(new Claim(ClaimTypes.Role, ur.Role.Name));
                     }
                 }
-            }
-
-            // CORREÇÃO: Guid não usa .HasValue. Verifica-se se é diferente de Empty.
-            if (user.InstituicaoId != Guid.Empty)
-            {
-                claims.Add(new Claim("tenantId", user.InstituicaoId.ToString()));
             }
 
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
@@ -62,6 +62,7 @@ namespace HRManager.WebAPI.Services
 
             return tokenHandler.WriteToken(token);
         }
+
         // Implementação básica para evitar outro erro de NotImplemented
         public bool isMasterTenant(string token)
         {

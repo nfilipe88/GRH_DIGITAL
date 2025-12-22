@@ -55,33 +55,60 @@ namespace HRManager.WebAPI.Services
                 .ToListAsync();
         }
 
-        public async Task<Colaborador> CreateAsync(CriarColaboradorRequest request)
+        public async Task<ColaboradorDto> CreateAsync(CriarColaboradorRequest request)
         {
-            var tenantId = _tenantService.GetInstituicaoId();
+            // 1. Validar Perfil e Instituição
+            Guid instituicaoAlvoId;
 
-            // Validar se o Cargo existe
-            var cargo = await _context.Cargos
-                .FirstOrDefaultAsync(c => c.Id == request.CargoId); // Agora usa ID direto
+            if (_tenantService.IsMasterTenant)
+            {
+                // REGRA DE NEGÓCIO (Master): Deve selecionar a instituição
+                if (!request.InstituicaoId.HasValue || request.InstituicaoId == Guid.Empty)
+                {
+                    throw new ArgumentException("O Gestor Master deve selecionar uma Instituição para o colaborador.");
+                }
+                instituicaoAlvoId = request.InstituicaoId.Value;
+            }
+            else
+            {
+                // REGRA DE NEGÓCIO (RH): Carrega automaticamente do Token
+                var tenantId = _tenantService.TenantId;
+                if (!tenantId.HasValue)
+                {
+                    throw new UnauthorizedAccessException("Não foi possível identificar a instituição do Gestor de RH.");
+                }
+                instituicaoAlvoId = tenantId.Value;
+            }
 
-            if (cargo == null)
-                throw new KeyNotFoundException("Cargo não encontrado.");
+            // 2. Verificar se a instituição existe (Segurança extra para o Master)
+            var instituicaoExists = await _context.Instituicoes.AnyAsync(i => i.Id == instituicaoAlvoId);
+            if (!instituicaoExists) throw new KeyNotFoundException("A instituição selecionada não existe.");
 
-            var novo = new Colaborador
+            // 3. Mapear e Criar (Forçando o ID correto)
+            var colaborador = new Colaborador
             {
                 NomeCompleto = request.NomeCompleto,
                 EmailPessoal = request.EmailPessoal,
+                DataNascimento = request.DataNascimento,
                 NIF = request.NIF,
-                DataAdmissao = DateTime.SpecifyKind(request.DataAdmissao, DateTimeKind.Utc),
+                Telemovel = request.Telemovel,
+                DataAdmissao = request.DataAdmissao,
+                Morada = request.Morada,
+                InstituicaoId = instituicaoAlvoId,
                 CargoId = request.CargoId,
                 Departamento = request.Departamento,
+                IBAN = request.IBAN,
+                Localizacao = request.Localizacao,
+                NumeroAgente = request.NumeroAgente,
                 SalarioBase = request.SalarioBase,
-                InstituicaoId = tenantId,
-                IsAtivo = true
+                SaldoFerias = 22,
+                TipoContrato = request.TipoContrato,
             };
 
-            _context.Colaboradores.Add(novo);
+            _context.Colaboradores.Add(colaborador);
             await _context.SaveChangesAsync();
-            return novo;
+
+            return MapToDto(colaborador);
         }
 
         public async Task<bool> UpdateAsync(Guid id, AtualizarDadosPessoaisRequest request)
@@ -112,5 +139,67 @@ namespace HRManager.WebAPI.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task DesativarColaboradorAsync(Guid id)
+        {
+            var colaborador = await _context.Colaboradores
+                .Include(c => c.Subordinados) // Importante carregar os subordinados
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (colaborador == null) throw new KeyNotFoundException("Colaborador não encontrado.");
+
+            // Se tiver subordinados ativos, lançamos uma exceção específica
+            if (colaborador.Subordinados.Any(s => s.IsAtivo))
+            {
+                // Usamos uma mensagem chave que o frontend vai procurar
+                throw new InvalidOperationException("HAS_SUBORDINATES");
+            }
+
+            colaborador.IsAtivo = false;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task TransferirEquipaAsync(Guid gestorAntigoId, Guid gestorNovoId)
+        {
+            // 1. Busca todos os subordinados do gestor antigo
+            var subordinados = await _context.Colaboradores
+                .Where(c => c.GestorId == gestorAntigoId)
+                .ToListAsync();
+
+            // 2. Atualiza para o novo gestor
+            foreach (var sub in subordinados)
+            {
+                sub.GestorId = gestorNovoId;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private ColaboradorDto MapToDto(Colaborador c)
+        {
+            return new ColaboradorDto
+            {
+                NomeCompleto = c.NomeCompleto,
+                DataNascimento = c.DataNascimento,
+                EmailPessoal = c.EmailPessoal,
+                NIF = c.NIF,
+                IBAN = c.IBAN,
+                DataAdmissao = c.DataAdmissao,
+                NumeroAgente = c.NumeroAgente,
+                TipoContrato = c.TipoContrato,
+                SalarioBase = c.SalarioBase,
+                Morada = c.Morada,
+                Localizacao = c.Localizacao,
+                Departamento = c.Departamento,
+                Telemovel = c.Telemovel,
+                IsAtivo = c.IsAtivo,
+                // Adiciona outros campos conforme necessário no teu DTO
+                InstituicaoId = c.InstituicaoId,
+                NomeInsituicao = c.Instituicao?.Nome,
+                GestorId = c.GestorId,
+                NomeGestor = c.Gestor?.NomeCompleto,
+                CargoId = c.CargoId,
+                NomeCargo = c.Cargo?.Nome ?? "Sem Cargo", // Supondo que tens a navegação
+            };
+        }
     }
 }

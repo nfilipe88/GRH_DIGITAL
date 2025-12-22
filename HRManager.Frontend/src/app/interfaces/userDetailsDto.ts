@@ -1,7 +1,8 @@
 // *** INTERFACE PARA CARREGAR DETALHES DO UTILIZADOR ***
-export interface UserDetails {
+export interface UserDetailsDto {
   id: string;
   email: string;
-  role: string;
+  roles: string[];
   nomeInstituicao?: string;
+  instituicaoId?: string;
 }

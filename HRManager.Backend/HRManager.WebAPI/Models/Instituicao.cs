@@ -18,7 +18,6 @@ namespace HRManager.WebAPI.Models
         [DataType(DataType.PhoneNumber)]
         public int? Telemovel { get; set; }
         public string EmailContato { get; set; }=string.Empty;
-        public DateTime DataCriacao { get; set; }
         public bool IsAtiva { get; set; } = true; // (FA-1)
         // Relações (para EF Core)
         public ICollection<User> Users { get; set; }=new List<User>();

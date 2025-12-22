@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { Avaliacao } from '../../interfaces/Avaliacao';
 import { AvaliacaoService } from '../../services/avaliacao.service';
 import { RealizarAutoAvaliacaoRequest } from '../../interfaces/realizarAutoAvaliacaoRequest';
 import { FormsModule } from '@angular/forms';
+import { AvaliacaoDto } from '../../interfaces/AvaliacaoDto';
 
 @Component({
   selector: 'app-minhas-avaliacoes',
@@ -14,8 +14,8 @@ import { FormsModule } from '@angular/forms';
 export class MinhasAvaliacoes implements OnInit {
   private avaliacaoService = inject(AvaliacaoService);
 
-  avaliacoes: Avaliacao[] = [];
-  avaliacaoSelecionada: Avaliacao | null = null;
+  avaliacoes: AvaliacaoDto[] = [];
+  avaliacaoSelecionada: AvaliacaoDto | null = null;
   loading = true;
   isModalAberto = false;
 
@@ -37,7 +37,7 @@ export class MinhasAvaliacoes implements OnInit {
     });
   }
 
-  abrirAutoAvaliacao(av: Avaliacao) {
+  abrirAutoAvaliacao(av: AvaliacaoDto) {
     // Só permite abrir se não estiver finalizada
     if (av.estado !== 'Finalizada') {
       this.avaliacaoSelecionada = { ...av }; // Cria uma cópia para edição
@@ -64,7 +64,7 @@ export class MinhasAvaliacoes implements OnInit {
       }))
     };
 
-    this.avaliacaoService.submeterAutoAvaliacao(this.avaliacaoSelecionada.id, request).subscribe({
+    this.avaliacaoService.realizarAutoAvaliacao(this.avaliacaoSelecionada.id, request).subscribe({
       next: () => {
         alert('Autoavaliação guardada com sucesso!');
         this.fecharModal();

@@ -1,7 +1,7 @@
+import { AvaliacaoDto } from './../../interfaces/AvaliacaoDto';
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
-import { Avaliacao } from '../../interfaces/Avaliacao';
 import { AvaliacaoService } from '../../services/avaliacao.service';
 
 @Component({
@@ -14,7 +14,7 @@ export class ListaAvaliacao implements OnInit {
   private avaliacaoService = inject(AvaliacaoService);
   private router = inject(Router);
 
-  avaliacoes: Avaliacao[] = [];
+  avaliacoes: AvaliacaoDto[] = [];
   loading = true;
 
   ngOnInit() {

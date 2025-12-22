@@ -3,8 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AvaliacaoService } from '../../services/avaliacao.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Avaliacao } from '../../interfaces/Avaliacao';
 import { RealizarAvaliacaoGestorRequest } from '../../interfaces/realizarAvaliacaoGestorRequest';
+import { AvaliacaoDto } from '../../interfaces/AvaliacaoDto';
 
 @Component({
   selector: 'app-realizar-avaliacao',
@@ -17,7 +17,7 @@ export class RealizarAvaliacao implements OnInit {
   private router = inject(Router);
   private avaliacaoService = inject(AvaliacaoService);
 
-  avaliacao: Avaliacao | null = null;
+  avaliacao: AvaliacaoDto | null = null;
   comentarioFinal: string = '';
   loading = true;
 
@@ -39,7 +39,7 @@ export class RealizarAvaliacao implements OnInit {
 
   carregarAvaliacao(id: string) {
     this.loading = true;
-    this.avaliacaoService.getAvaliacao(id).subscribe({
+    this.avaliacaoService.getAvaliacaoById(id).subscribe({
       next: (data) => {
         this.avaliacao = data;
         this.comentarioFinal = data.comentarioFinalGestor || '';

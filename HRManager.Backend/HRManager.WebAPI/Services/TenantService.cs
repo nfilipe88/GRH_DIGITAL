@@ -14,39 +14,61 @@ public class TenantService : ITenantService
 
     public Guid GetInstituicaoId()
     {
-        // 1. Obter o valor da claim 'instituicao_id' (que deve ser colocada no token JWT no login)
-        var instituicaoIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("instituicao_id")?.Value;
+        // CORREÇÃO: Mudar de "instituicao_id" para "tenantId"
+        var tenantIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("tenantId")?.Value;
 
-        if (Guid.TryParse(instituicaoIdClaim, out var instituicaoId))
+        if (Guid.TryParse(tenantIdClaim, out var instituicaoId))
         {
             return instituicaoId;
         }
 
-        // 2. Se não encontrar, lança exceção (segurança) ou retorna um Guid.Empty
-        return Guid.Empty; 
+        return Guid.Empty;
     }
 
-    public bool IsMasterTenant => _httpContextAccessor.HttpContext?.User.IsInRole("GestorMaster") ?? false;
-
-    // 2. Implementar o método da interface
     public Guid? GetTenantId()
     {
-        // Obter o "Claim" (informação) "InstituicaoId" do token do utilizador logado
+        // CORREÇÃO: Mudar de "InstituicaoId" para "tenantId"
         var tenantIdClaim = _httpContextAccessor.HttpContext?.User?
-            .FindFirstValue("InstituicaoId");
+            .FindFirstValue("tenantId");
 
         if (string.IsNullOrEmpty(tenantIdClaim))
         {
-            // Utilizador é um GestorMaster ou o claim não existe
             return null;
         }
 
         if (Guid.TryParse(tenantIdClaim, out Guid tenantId))
         {
-            // Encontrámos o ID do GestorRH
             return tenantId;
         }
 
         return null;
+    }
+
+    // Esta propriedade já está correta
+    public Guid? TenantId
+    {
+        get
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            Console.WriteLine($"User authenticated: {user?.Identity?.IsAuthenticated}");
+
+            var tenantClaim = user?.FindFirst("tenantId");
+            Console.WriteLine($"Tenant claim found: {tenantClaim?.Value}");
+
+            if (tenantClaim != null && Guid.TryParse(tenantClaim.Value, out var parsedId))
+            {
+                return parsedId;
+            }
+
+            return null;
+        }
+    }
+
+    public bool IsMasterTenant
+    {
+        get
+        {
+            return _httpContextAccessor.HttpContext?.User.IsInRole("GestorMaster") ?? false;
+        }
     }
 }

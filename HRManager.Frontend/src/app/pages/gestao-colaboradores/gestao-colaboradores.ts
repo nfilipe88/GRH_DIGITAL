@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ColaboradorService } from '../../services/colaborador.service';
 import { InstituicaoService } from '../../services/instituicao.service';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,6 +6,8 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Colaborador } from '../../interfaces/colaborador';
 import { Instituicao } from '../../interfaces/instituicao';
+import { CargoDto } from '../../interfaces/cargoDto';
+import { ColaboradorListDto } from '../../interfaces/colaboradorListDto';
 
 @Component({
   selector: 'app-gestao-colaboradores',
@@ -27,9 +29,25 @@ export class GestaoColaboradores implements OnInit {
   public listaColaboradores: Colaborador[] = [];
 
   public isModalAberto: boolean = false;
-  public idColaboradorEmEdicao: string='';
+  public idColaboradorEmEdicao: string = '';
   public loggedInUserRole: string | null = null;
   public nomeInstituicaoGestor: string = '';
+
+  // Estado
+  isMaster = signal<boolean>(false);
+  instituicoes = signal<Instituicao[]>([]);
+  cargos = signal<CargoDto[]>([]); // Lista completa de cargos
+
+  // Autocomplete Estado
+  termoPesquisaCargo = signal<string>('');
+  mostrarDropdownCargos = signal<boolean>(false);
+
+  // 1. Definir o signal 'colaboradores' que faltava
+  colaboradores = signal<ColaboradorListDto[]>([]);
+  // Estado para o Modal de Transferência
+  mostrarModalTransferencia = signal(false);
+  gestorParaDesativarId: string | null = null;
+  novoGestorId: string | null = null;
 
   // Feedback visual
   public feedbackMessage: string | null = null;
@@ -43,7 +61,7 @@ export class GestaoColaboradores implements OnInit {
       nomeCompleto: ['', [Validators.required, Validators.minLength(3)]],
       emailPessoal: ['', [Validators.required, Validators.email]],
       nif: ['', [Validators.required, Validators.pattern(/^\d{9}$/)]], // Exatamente 9 dígitos
-      instituicaoId: ['', [Validators.required]],
+      instituicaoId: [null, [Validators.required]],
 
       // Campos opcionais mas com validação de formato se preenchidos
       telemovel: [null, [Validators.pattern(/^[0-9]{9}$/)]],
@@ -55,7 +73,7 @@ export class GestaoColaboradores implements OnInit {
       iban: [''],
       dataNascimento: [null],
       dataAdmissao: [new Date().toISOString().split('T')[0], Validators.required],
-      cargo: [''],
+      cargo: [null, [Validators.required]],
       tipoContrato: [''],
       departamento: [''],
       localizacao: ['']
@@ -65,6 +83,8 @@ export class GestaoColaboradores implements OnInit {
   ngOnInit(): void {
     this.carregarColaboradores();
     this.configurarPermissoes();
+    this.carregarInstituicoes();
+    this.verificarPerfil();
   }
 
   configurarPermissoes(): void {
@@ -82,6 +102,37 @@ export class GestaoColaboradores implements OnInit {
     }
   }
 
+  // Computed: Filtra cargos baseado no que o user escreve
+  cargosFiltrados = computed(() => {
+    const termo = this.termoPesquisaCargo().toLowerCase();
+    return this.cargos().filter(c => c.nome.toLowerCase().includes(termo));
+  });
+
+  carregarDadosIniciais() {
+    // TODO: Substituir por chamada real ao serviço de cargos
+    // this.cargoService.getCargos().subscribe(...)
+    this.cargos.set([
+      { id: 'guid-1', nome: 'Desenvolvedor Senior', instituicao: '...', isAtivo: true },
+      { id: 'guid-2', nome: 'Gestor de RH', instituicao: '...', isAtivo: true },
+      { id: 'guid-3', nome: 'Assistente Administrativo', instituicao: '...', isAtivo: true }
+    ]);
+  }
+
+  // --- Lógica do Autocomplete de Cargo ---
+  selecionarCargo(cargo: CargoDto) {
+    this.colaboradorForm.patchValue({ cargoId: cargo.id }); // Guarda o ID
+    this.termoPesquisaCargo.set(cargo.nome); // Mostra o nome no input visual
+    this.mostrarDropdownCargos.set(false); // Fecha dropdown
+  }
+
+  aoDigitarCargo(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.termoPesquisaCargo.set(input.value);
+    this.colaboradorForm.patchValue({ cargoId: null }); // Limpa ID se user mudar o texto
+    this.mostrarDropdownCargos.set(true);
+  }
+  // ----------------------------------------
+
   carregarInstituicoes(): void {
     this.instituicaoService.getInstituicoes().subscribe({
       next: (data) => this.listaInstituicoes = data.filter(i => i.isAtiva),
@@ -94,6 +145,25 @@ export class GestaoColaboradores implements OnInit {
       next: (data) => this.listaColaboradores = data,
       error: (err) => console.error(err)
     });
+  }
+
+  verificarPerfil() {
+    this.isMaster.set(this.authService.hasRole('GestorMaster'));
+
+    if (this.isMaster()) {
+      // MASTER: Carrega lista e obriga seleção manual
+      this.carregarInstituicoes();
+      this.colaboradorForm.get('instituicaoId')?.enable();
+    } else {
+      // RH: Carrega ID automático e "tranca" o campo
+      const myInstId = this.authService.getInstituicaoId();
+
+      if (myInstId) {
+        this.colaboradorForm.patchValue({ instituicaoId: myInstId });
+        // Importante: Não usar disable(), senão o valor não é enviado no submit.
+        // Vamos usar 'readonly' no HTML.
+      }
+    }
   }
 
   // --- AÇÕES DO FORMULÁRIO ---
@@ -111,7 +181,7 @@ export class GestaoColaboradores implements OnInit {
     // Se for GestorRH, volta a forçar o ID da instituição
     if (this.loggedInUserRole === 'GestorRH') {
       const instId = this.authService.getInstituicaoId();
-      if(instId) this.colaboradorForm.patchValue({ instituicaoId: instId });
+      if (instId) this.colaboradorForm.patchValue({ instituicaoId: instId });
     }
 
     this.isModalAberto = true;
@@ -162,7 +232,7 @@ export class GestaoColaboradores implements OnInit {
 
     // Garantia extra para GestorRH
     if (this.loggedInUserRole === 'GestorRH') {
-        dadosParaEnviar.instituicaoId = this.authService.getInstituicaoId();
+      dadosParaEnviar.instituicaoId = this.authService.getInstituicaoId();
     }
 
     if (this.idColaboradorEmEdicao) {
@@ -198,6 +268,62 @@ export class GestaoColaboradores implements OnInit {
       },
       error: (err) => this.tratarErro(err)
     });
+  }
+
+  // Lista de possíveis novos gestores (podes filtrar para não mostrar o próprio)
+  potenciaisGestores = computed(() => {
+    return this.colaboradores().filter(c => c.id !== this.gestorParaDesativarId);
+  });
+
+  desativarColaborador(colaborador: Colaborador) {
+    if (!confirm(`Deseja desativar ${colaborador.nomeCompleto}?`)) return;
+
+    this.colaboradorService.desativar(colaborador.id).subscribe({
+      next: () => {
+        alert('Colaborador desativado com sucesso.');
+        this.carregarColaboradores();
+      },
+      error: (err : any) => {
+        // Lógica Inteligente: Deteta o erro específico do Backend
+        if (err.error?.message === 'HAS_SUBORDINATES' || err.message.includes('HAS_SUBORDINATES')) {
+
+          const desejaTransferir = confirm(
+            'Este colaborador é Gestor de uma equipa ativa. ' +
+            'Não pode ser desativado sem antes transferir a equipa.\n\n' +
+            'Deseja transferir a equipa agora?'
+          );
+
+          if (desejaTransferir) {
+            this.gestorParaDesativarId = colaborador.id;
+            this.mostrarModalTransferencia.set(true); // Abre o Modal (que deves criar no HTML)
+          }
+
+        } else {
+          alert('Erro ao desativar: ' + err.message);
+        }
+      }
+    });
+  }
+
+  confirmarTransferencia() {
+    if (!this.gestorParaDesativarId || !this.novoGestorId) return;
+
+    this.colaboradorService.transferirEquipa(this.gestorParaDesativarId, this.novoGestorId)
+      .subscribe({
+        next: () => {
+          alert('Equipa transferida! A desativar o gestor antigo...');
+          this.mostrarModalTransferencia.set(false);
+
+          // Agora que já não tem equipa, desativa sem problemas
+          this.colaboradorService.desativar(this.gestorParaDesativarId!).subscribe(() => {
+            this.carregarColaboradores();
+            this.gestorParaDesativarId = null;
+            this.novoGestorId = null;
+          });
+        },
+        // 4. CORREÇÃO: Tipar 'err'
+        error: (err: any) => alert('Erro na transferência: ' + (err.error?.message || err.message))
+      });
   }
 
   mudarEstado(colaborador: Colaborador): void {

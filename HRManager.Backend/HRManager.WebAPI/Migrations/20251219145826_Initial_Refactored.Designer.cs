@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HRManager.WebAPI.Migrations
 {
     [DbContext(typeof(HRManagerDbContext))]
-    partial class HRManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251219145826_Initial_Refactored")]
+    partial class Initial_Refactored
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -300,7 +303,6 @@ namespace HRManager.WebAPI.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Departamento")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -756,9 +758,8 @@ namespace HRManager.WebAPI.Migrations
                         .IsRequired();
 
                     b.HasOne("HRManager.WebAPI.Models.Colaborador", "Gestor")
-                        .WithMany("Subordinados")
-                        .HasForeignKey("GestorId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany()
+                        .HasForeignKey("GestorId");
 
                     b.HasOne("HRManager.WebAPI.Models.Instituicao", "Instituicao")
                         .WithMany("Colaboradores")
@@ -856,11 +857,6 @@ namespace HRManager.WebAPI.Migrations
             modelBuilder.Entity("HRManager.WebAPI.Models.Avaliacao", b =>
                 {
                     b.Navigation("Itens");
-                });
-
-            modelBuilder.Entity("HRManager.WebAPI.Models.Colaborador", b =>
-                {
-                    b.Navigation("Subordinados");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Instituicao", b =>

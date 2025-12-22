@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HRManager.WebAPI.Migrations
 {
     [DbContext(typeof(HRManagerDbContext))]
-    [Migration("20251217125629_Initial_Refactored")]
-    partial class Initial_Refactored
+    [Migration("20251222073420_refactored_Colaborador")]
+    partial class refactored_Colaborador
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -303,6 +303,7 @@ namespace HRManager.WebAPI.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Departamento")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -758,8 +759,9 @@ namespace HRManager.WebAPI.Migrations
                         .IsRequired();
 
                     b.HasOne("HRManager.WebAPI.Models.Colaborador", "Gestor")
-                        .WithMany()
-                        .HasForeignKey("GestorId");
+                        .WithMany("Subordinados")
+                        .HasForeignKey("GestorId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HRManager.WebAPI.Models.Instituicao", "Instituicao")
                         .WithMany("Colaboradores")
@@ -857,6 +859,11 @@ namespace HRManager.WebAPI.Migrations
             modelBuilder.Entity("HRManager.WebAPI.Models.Avaliacao", b =>
                 {
                     b.Navigation("Itens");
+                });
+
+            modelBuilder.Entity("HRManager.WebAPI.Models.Colaborador", b =>
+                {
+                    b.Navigation("Subordinados");
                 });
 
             modelBuilder.Entity("HRManager.WebAPI.Models.Instituicao", b =>

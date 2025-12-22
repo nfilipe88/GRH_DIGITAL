@@ -9,6 +9,7 @@ namespace HRManager.WebAPI.Domain.Interfaces
         // Processo de Avaliação
         Task<List<AvaliacaoDto>> GetMinhasAvaliacoesAsync(string emailColaborador); // Para o Colaborador
         Task<List<AvaliacaoDto>> GetAvaliacoesEquipaAsync(string emailGestor); // Para o Gestor
+        Task<AvaliacaoDto> GetAvaliacaoPorIdAsync(Guid id, string emailSolicitante);
         Task<AvaliacaoDto> IniciarAvaliacaoAsync(Guid colaboradorId, Guid cicloId, string emailGestor);
         Task<AvaliacaoDto> RealizarAutoAvaliacaoAsync(Guid avaliacaoId, RealizarAutoAvaliacaoRequest request, string emailColaborador);
         Task<AvaliacaoDto> RealizarAvaliacaoGestorAsync(Guid avaliacaoId, RealizarAvaliacaoGestorRequest request, string emailGestor);

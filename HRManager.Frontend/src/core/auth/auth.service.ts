@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { LoginResponse } from '../../core/auth/interfaces/login-response';
-import { UserDetails } from '../../app/interfaces/userDetailsDto';
+import { UserDetailsDto } from '../../app/interfaces/userDetailsDto';
 
 // *** 1. INTERFACE PARA O PEDIDO DE REGISTO ***
 export interface RegisterRequest {
@@ -102,8 +102,8 @@ export class AuthService {
   /**
    * Obtém os detalhes do utilizador logado a partir da API
    */
-  public getUserDetails(): Observable<UserDetails> {
-    return this.http.get<UserDetails>(`${this.apiUrl}/me`);
+  public getUserDetails(): Observable<UserDetailsDto> {
+    return this.http.get<UserDetailsDto>(`${this.apiUrl}/me`);
   }
 
   // *** 2. NOVO MÉTODO ***
@@ -111,7 +111,7 @@ export class AuthService {
     return this.http.get<UserListDto[]>(`${this.apiUrl}/users`);
   }
 
-  // --- NOVO MÉTODO: Extrair InstituicaoId do Token ---
+  // --- MÉTODO: Extrair InstituicaoId do Token ---
   public getInstituicaoId(): string | null {
     const token = this.getToken();
     if (!token) return null;
@@ -158,5 +158,25 @@ export class AuthService {
     } catch (error) {
       return null;
     }
+  }
+
+
+  // 1. Verifica se o user tem um papel específico (ex: 'GestorMaster')
+  hasRole(role: string): boolean {
+    const user = this.getUser(); // Assume que tens um método que devolve o user do localStorage/Signal
+    if (!user || !user.roles) return false;
+    return user.roles.includes(role);
+  }
+
+  // 2. Obtém o ID da Instituição do utilizador logado (para o GestorRH)
+  // getInstituicaoId(): string | null {
+  //   const user = this.getUser();
+  //   return user?.instituicaoId || null;
+  // }
+
+  // 3. Helper para obter o objeto User completo (se ainda não tiveres)
+  getUser(): UserDetailsDto | null {
+    const userStr = localStorage.getItem('user'); // Ou a tua chave de storage
+    return userStr ? JSON.parse(userStr) : null;
   }
 }
