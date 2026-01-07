@@ -24,7 +24,7 @@ namespace HRManager.WebAPI.Models
 
         [ForeignKey("ColaboradorId")]
         [JsonIgnore] // Evita ciclos ao serializar
-        public virtual Colaborador Colaborador { get; set; }
+        public virtual Colaborador? Colaborador { get; set; }
 
         // --- Dados da Habilitação ---
         [Required]

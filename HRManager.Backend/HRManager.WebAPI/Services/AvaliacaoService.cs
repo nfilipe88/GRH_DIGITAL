@@ -188,10 +188,10 @@ namespace HRManager.WebAPI.Services
             //var tenantId = _tenantService.TenantId;
 
             // 1. Validação de Segurança: O Tenant existe?
-            var instituicaoExiste = await _context.Instituicoes
+            var instituicaoOndeCriarCompetenciaExiste = await _context.Instituicoes
                                                   .AnyAsync(i => i.Id == tenantId);
 
-            if (!instituicaoExiste)
+            if (!instituicaoOndeCriarCompetenciaExiste)
             {
                 throw new KeyNotFoundException($"A instituição (ID: {tenantId}) associada ao utilizador não foi encontrada.");
             }
@@ -318,17 +318,21 @@ namespace HRManager.WebAPI.Services
             );
 
             // Precisamos recarregar para trazer os Includes no MapToDto
-            return await GetAvaliacaoPorIdInternalAsync(novaAvaliacao.Id);
+            var avaliacaoDto = await GetAvaliacaoPorIdInternalAsync(novaAvaliacao.Id);
+            if (avaliacaoDto == null)
+                throw new InvalidOperationException("Erro ao carregar a avaliação recém-criada.");
+
+            return avaliacaoDto;
         }
 
         // Método auxiliar privado para buscar ID com includes (evita repetição)
-        public async Task<AvaliacaoDto> GetAvaliacaoPorIdInternalAsync(Guid id)
+        public async Task<AvaliacaoDto?> GetAvaliacaoPorIdInternalAsync(Guid id)
         {
             var avaliacao = await _context.Avaliacoes
                .Include(a => a.Colaborador)
                .Include(a => a.Ciclo)
                .Include(a => a.Itens)
-                   .ThenInclude(i => i.Competencia) // <--- CRÍTICO: Incluir a Competência para saber o Nome da Pergunta
+                   .ThenInclude(i => i.Competencia)
                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (avaliacao == null) return null;

@@ -4,6 +4,7 @@ import { InstituicaoService } from '../../services/instituicao.service';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ToastrService } from 'ngx-toastr';
 import { Colaborador } from '../../interfaces/colaborador';
 import { Instituicao } from '../../interfaces/instituicao';
 import { CargoDto } from '../../interfaces/cargoDto';
@@ -22,6 +23,7 @@ export class GestaoColaboradores implements OnInit {
   private colaboradorService = inject(ColaboradorService);
   private instituicaoService = inject(InstituicaoService);
   private authService = inject(AuthService);
+  private toastr = inject(ToastrService);
 
   // Variáveis de Estado
   public colaboradorForm: FormGroup; // O nosso novo formulário Reativo
@@ -37,6 +39,7 @@ export class GestaoColaboradores implements OnInit {
   isMaster = signal<boolean>(false);
   instituicoes = signal<Instituicao[]>([]);
   cargos = signal<CargoDto[]>([]); // Lista completa de cargos
+  nomeInstituicaoRH = signal<string>('');
 
   // Autocomplete Estado
   termoPesquisaCargo = signal<string>('');
@@ -81,10 +84,10 @@ export class GestaoColaboradores implements OnInit {
   }
 
   ngOnInit(): void {
-    this.carregarColaboradores();
     this.configurarPermissoes();
-    this.carregarInstituicoes();
     this.verificarPerfil();
+    this.carregarColaboradores();
+    this.carregarCargos();
   }
 
   configurarPermissoes(): void {
@@ -108,14 +111,16 @@ export class GestaoColaboradores implements OnInit {
     return this.cargos().filter(c => c.nome.toLowerCase().includes(termo));
   });
 
-  carregarDadosIniciais() {
-    // TODO: Substituir por chamada real ao serviço de cargos
-    // this.cargoService.getCargos().subscribe(...)
-    this.cargos.set([
-      { id: 'guid-1', nome: 'Desenvolvedor Senior', instituicao: '...', isAtivo: true },
-      { id: 'guid-2', nome: 'Gestor de RH', instituicao: '...', isAtivo: true },
-      { id: 'guid-3', nome: 'Assistente Administrativo', instituicao: '...', isAtivo: true }
-    ]);
+  carregarCargos() {
+    // Chama o serviço real em vez de dados hardcoded
+    this.colaboradorService.getCargos().subscribe({
+      next: (data) => {
+        this.cargos.set(data);
+        // Se a lista vier vazia, o dropdown não abre. Verifica se tens cargos na BD!
+        if (data.length === 0) console.warn('Atenção: Nenhum cargo encontrado na BD.');
+      },
+      error: (err) => console.error('Erro ao carregar cargos:', err)
+    });
   }
 
   // --- Lógica do Autocomplete de Cargo ---
@@ -148,23 +153,26 @@ export class GestaoColaboradores implements OnInit {
   }
 
   verificarPerfil() {
-    this.isMaster.set(this.authService.hasRole('GestorMaster'));
+  // Atualiza o estado de Master
+  const role = this.authService.getUserRole();
+  this.isMaster.set(role === 'GestorMaster'); // Garante que lê a role corretamente
 
-    if (this.isMaster()) {
-      // MASTER: Carrega lista e obriga seleção manual
-      this.carregarInstituicoes();
-      this.colaboradorForm.get('instituicaoId')?.enable();
-    } else {
-      // RH: Carrega ID automático e "tranca" o campo
-      const myInstId = this.authService.getInstituicaoId();
+  if (this.isMaster()) {
+    this.carregarInstituicoes();
+    this.colaboradorForm.get('instituicaoId')?.enable();
+  }
+  else {
+    // CENÁRIO 2: É RH
+    const myInstId = this.authService.getInstituicaoId();
+    // NOTA: Se o nome vier vazio, usamos um fallback para não ficar em branco
+    const myInstName = this.authService.getInstituicaoNome() || 'A Minha Instituição';
 
-      if (myInstId) {
-        this.colaboradorForm.patchValue({ instituicaoId: myInstId });
-        // Importante: Não usar disable(), senão o valor não é enviado no submit.
-        // Vamos usar 'readonly' no HTML.
-      }
+    if (myInstId) {
+      this.colaboradorForm.patchValue({ instituicaoId: myInstId });
+      this.nomeInstituicaoRH.set(myInstName);
     }
   }
+}
 
   // --- AÇÕES DO FORMULÁRIO ---
 
@@ -228,15 +236,15 @@ export class GestaoColaboradores implements OnInit {
       return;
     }
 
-    const dadosParaEnviar = this.colaboradorForm.value;
+    const request = this.colaboradorForm.value;
 
     // Garantia extra para GestorRH
     if (this.loggedInUserRole === 'GestorRH') {
-      dadosParaEnviar.instituicaoId = this.authService.getInstituicaoId();
+      request.instituicaoId = this.authService.getInstituicaoId();
     }
 
     if (this.idColaboradorEmEdicao) {
-      this.colaboradorService.atualizarColaborador(this.idColaboradorEmEdicao, dadosParaEnviar).subscribe({
+      this.colaboradorService.atualizarColaborador(this.idColaboradorEmEdicao, request).subscribe({
         next: (res) => {
           this.mostrarFeedback('Atualizado com sucesso!', false);
           this.carregarColaboradores();
@@ -245,13 +253,16 @@ export class GestaoColaboradores implements OnInit {
         error: (err) => this.tratarErro(err)
       });
     } else {
-      this.colaboradorService.criarColaborador(dadosParaEnviar).subscribe({
+      this.colaboradorService.criarColaborador(request).subscribe({
         next: (res) => {
-          this.mostrarFeedback('Criado com sucesso!', false);
+          this.toastr.success('Colaborador e conta de utilizador criados com sucesso!');
           this.carregarColaboradores();
           this.fecharModal();
         },
-        error: (err) => this.tratarErro(err)
+        error: (err) => {
+        // Agora o erro pode vir do Identity (ex: Password fraca ou Email duplicado)
+        this.toastr.error('Erro ao criar: ' + err.error?.message || 'Erro desconhecido');
+      }
       });
     }
   }

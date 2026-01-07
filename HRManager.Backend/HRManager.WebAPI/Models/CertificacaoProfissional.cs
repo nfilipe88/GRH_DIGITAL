@@ -13,16 +13,16 @@ namespace HRManager.WebAPI.Models
 
         [ForeignKey("ColaboradorId")]
         [JsonIgnore]
-        public virtual Colaborador Colaborador { get; set; }
+        public virtual Colaborador? Colaborador { get; set; }
 
         // --- Dados da Certificação ---
         [Required]
         [MaxLength(200)]
-        public string NomeCertificacao { get; set; } // Ex: PMP, Cisco CCNA
+        public string NomeCertificacao { get; set; } = string.Empty; // Ex: PMP, Cisco CCNA
 
         [Required]
         [MaxLength(200)]
-        public string EntidadeEmissora { get; set; } // Ex: PMI, Cisco
+        public string EntidadeEmissora { get; set; } = string.Empty; // Ex: PMI, Cisco
 
         [Required]
         public DateTime DataEmissao { get; set; }

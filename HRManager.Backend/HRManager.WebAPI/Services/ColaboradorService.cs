@@ -1,8 +1,11 @@
 ﻿using FluentValidation;
 using HRManager.Application.Interfaces;
+using HRManager.WebAPI.Constants;
+using HRManager.WebAPI.Domain.enums;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRManager.WebAPI.Services
@@ -10,15 +13,17 @@ namespace HRManager.WebAPI.Services
     public class ColaboradorService : IColaboradorService
     {
         private readonly HRManagerDbContext _context;
+        private readonly UserManager<User> _userManager;
         private readonly ITenantService _tenantService;
 
-        public ColaboradorService(HRManagerDbContext context, ITenantService tenantService)
+        public ColaboradorService(HRManagerDbContext context, ITenantService tenantService, UserManager<User> userManager)
         {
             _context = context;
             _tenantService = tenantService;
+            _userManager = userManager;
         }
 
-        public async Task<ColaboradorListDto?> GetByIdAsync(Guid id)
+        public async Task<ColaboradorDto?> GetByIdAsync(Guid id)
         {
             var colab = await _context.Colaboradores
                 .Include(c => c.Cargo)
@@ -26,15 +31,29 @@ namespace HRManager.WebAPI.Services
 
             if (colab == null) return null;
 
-            return new ColaboradorListDto
+            return new ColaboradorDto
             {
                 Id = colab.Id,
                 NomeCompleto = colab.NomeCompleto,
-                Email = colab.EmailPessoal,
-                Funcao = colab.Cargo?.Nome ?? "N/A",
+                EmailPessoal = colab.EmailPessoal,
+                NIF = colab.NIF,
+                NumeroAgente = colab.NumeroAgente,
+                Morada = colab.Morada,
+                Telemovel = colab.Telemovel,
+                SalarioBase = colab.SalarioBase,
+                TipoContrato = colab.TipoContrato,
+                SaldoFerias = colab.SaldoFerias,
                 Departamento = colab.Departamento,
-                //Status = colab.IsAtivo ? "Ativo" : "Inativo",
-                IsAtivo = colab.IsAtivo
+                Localizacao = colab.Localizacao,
+                DataAdmissao = colab.DataAdmissao,
+                DataNascimento = colab.DataNascimento,
+                IBAN = colab.IBAN,
+                CargoId = colab.CargoId,
+                NomeCargo = colab.Cargo != null ? colab.Cargo.Nome : "N/A",
+                InstituicaoId = colab.InstituicaoId,
+                NomeInsituicao = colab.Instituicao != null ? colab.Instituicao.Nome : "N/A",
+                GestorId = colab.GestorId,
+                NomeGestor = colab.Gestor != null ? colab.Gestor.NomeCompleto : "N/A",
             };
         }
 
@@ -47,68 +66,80 @@ namespace HRManager.WebAPI.Services
                     Id = c.Id,
                     NomeCompleto = c.NomeCompleto,
                     Email = c.EmailPessoal,
-                    Funcao = c.Cargo != null ? c.Cargo.Nome : "N/A",
+                    Cargo = c.Cargo != null ? c.Cargo.Nome : "N/A",
                     Departamento = c.Departamento,
-                    //Status = c.IsAtivo ? "Ativo" : "Inativo",
-                    IsAtivo = c.IsAtivo
-                })
+                    IsAtivo = c.IsAtivo})
                 .ToListAsync();
         }
 
         public async Task<ColaboradorDto> CreateAsync(CriarColaboradorRequest request)
         {
-            // 1. Validar Perfil e Instituição
-            Guid instituicaoAlvoId;
+            // 1. Validações Iniciais
+            if (await _context.Colaboradores.AnyAsync(c => c.EmailPessoal == request.EmailPessoal))
+                throw new ValidationException("Já existe um colaborador com este email.");
 
-            if (_tenantService.IsMasterTenant)
+            if (await _userManager.FindByEmailAsync(request.EmailPessoal) != null)
+                throw new ValidationException("Este email já está registado como utilizador no sistema.");
+
+            // 2. Iniciar Transação (Garante integridade: ou cria os dois ou nenhum)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                // REGRA DE NEGÓCIO (Master): Deve selecionar a instituição
-                if (!request.InstituicaoId.HasValue || request.InstituicaoId == Guid.Empty)
+                // 3. Criar o Utilizador (Identity)
+                var newUser = new User
                 {
-                    throw new ArgumentException("O Gestor Master deve selecionar uma Instituição para o colaborador.");
-                }
-                instituicaoAlvoId = request.InstituicaoId.Value;
-            }
-            else
-            {
-                // REGRA DE NEGÓCIO (RH): Carrega automaticamente do Token
-                var tenantId = _tenantService.TenantId;
-                if (!tenantId.HasValue)
+                    Email = request.EmailPessoal,
+                    NomeCompleto = request.NomeCompleto, // Sincroniza o nome
+                    InstituicaoId = _tenantService.GetTenantId() ?? Guid.Empty,
+                    IsAtivo = true
+                };
+
+                // Define uma password inicial (pode ser enviada por email depois)
+                var result = await _userManager.CreateAsync(newUser, "SenhaInicial@123");
+
+                if (!result.Succeeded)
+                    throw new ValidationException($"Erro ao criar utilizador: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+
+                // Atribui a Role de "Colaborador" por defeito
+                await _userManager.AddToRoleAsync(newUser, RolesConstants.Colaborador);
+
+                // 4. Criar o Colaborador (Domínio) vinculado ao Utilizador
+                var novoColaborador = new Colaborador
                 {
-                    throw new UnauthorizedAccessException("Não foi possível identificar a instituição do Gestor de RH.");
-                }
-                instituicaoAlvoId = tenantId.Value;
+                    NomeCompleto = request.NomeCompleto,
+                    EmailPessoal = request.EmailPessoal,
+                    NIF = request.NIF,
+                    DataNascimento = request.DataNascimento,
+                    Morada = request.Morada,
+                    Telemovel = request.Telemovel,
+                    DataAdmissao = request.DataAdmissao,
+                    TipoContrato = request.TipoContrato,
+                    SalarioBase = request.SalarioBase,
+                    IBAN = request.IBAN,
+                    Departamento = request.Departamento,
+                    Localizacao = request.Localizacao,
+                    IsAtivo = true,
+                    SaldoFerias = 22,
+                    // O VÍNCULO ACONTECE AQUI:
+                    GestorId = request.GestorId,
+                    CargoId = request.CargoId,
+                    InstituicaoId = _tenantService.GetTenantId() ?? Guid.Empty,
+                    UserId = newUser.Id
+                };
+
+                _context.Colaboradores.Add(novoColaborador);
+                await _context.SaveChangesAsync();
+
+                // 5. Commit da Transação
+                await transaction.CommitAsync();
+
+                return MapToDto(novoColaborador);
             }
-
-            // 2. Verificar se a instituição existe (Segurança extra para o Master)
-            var instituicaoExists = await _context.Instituicoes.AnyAsync(i => i.Id == instituicaoAlvoId);
-            if (!instituicaoExists) throw new KeyNotFoundException("A instituição selecionada não existe.");
-
-            // 3. Mapear e Criar (Forçando o ID correto)
-            var colaborador = new Colaborador
+            catch
             {
-                NomeCompleto = request.NomeCompleto,
-                EmailPessoal = request.EmailPessoal,
-                DataNascimento = request.DataNascimento,
-                NIF = request.NIF,
-                Telemovel = request.Telemovel,
-                DataAdmissao = request.DataAdmissao,
-                Morada = request.Morada,
-                InstituicaoId = instituicaoAlvoId,
-                CargoId = request.CargoId,
-                Departamento = request.Departamento,
-                IBAN = request.IBAN,
-                Localizacao = request.Localizacao,
-                NumeroAgente = request.NumeroAgente,
-                SalarioBase = request.SalarioBase,
-                SaldoFerias = 22,
-                TipoContrato = request.TipoContrato,
-            };
-
-            _context.Colaboradores.Add(colaborador);
-            await _context.SaveChangesAsync();
-
-            return MapToDto(colaborador);
+                await transaction.RollbackAsync();
+                throw; // Relança o erro para o controlador tratar
+            }
         }
 
         public async Task<bool> UpdateAsync(Guid id, AtualizarDadosPessoaisRequest request)
@@ -172,6 +203,24 @@ namespace HRManager.WebAPI.Services
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Metodo para obter a lista de cargos ativos.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<CargoDto>> GetCargosAsync()
+        {
+            // O filtro global do DbContext (Tenant) aplica-se automaticamente aqui
+            return await _context.Cargos
+                .Where(c => c.IsAtivo)
+                .Select(c => new CargoDto
+                {
+                    Id = c.Id,
+                    Nome = c.Nome
+                })
+                .OrderBy(c => c.Nome)
+                .ToListAsync();
         }
 
         private ColaboradorDto MapToDto(Colaborador c)

@@ -1,11 +1,10 @@
-﻿namespace HRManager.WebAPI.Models
-{
-    public class UserRole
-    {
-        public Guid UserId { get; set; }
-        public User User { get; set; } = null!;
+﻿using Microsoft.AspNetCore.Identity;
 
-        public Guid RoleId { get; set; }
-        public Role Role { get; set; } = null!;
+namespace HRManager.WebAPI.Models
+{
+    public class UserRole : IdentityUserRole<Guid>
+    {
+        public virtual User User { get; set; } = null!;
+        public virtual Role Role { get; set; } = null!;
     }
 }

@@ -141,7 +141,7 @@ namespace HRManager.WebAPI.Services
                 Tipo = p.Tipo.ToString(),
                 DataSolicitacao = p.DataSolicitacao,
                 Estado = p.Estado.ToString(),
-                NomeColaborador = p.Colaborador?.NomeCompleto
+                NomeColaborador = p.Colaborador.NomeCompleto
             };
         }
     }

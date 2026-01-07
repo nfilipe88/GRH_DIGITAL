@@ -31,15 +31,21 @@ namespace HRManager.WebAPI.Services
             // CORREÇÃO: User.InstituicaoId é um Guid, não Guid?. Verificamos se não é Empty.
             if (user.InstituicaoId != Guid.Empty)
             {
-                // CORREÇÃO: Removemos .Value (pois não é anulável)
                 claims.Add(new Claim("tenantId", user.InstituicaoId.ToString()));
+                // --- ADICIONA ESTA PARTE ---
+                // Verifica se a propriedade de navegação Instituicao está carregada
+                if (user.Instituicao != null)
+                {
+                    claims.Add(new Claim("InstituicaoNome", user.Instituicao.Nome));
+                }
+                // ---------------------------
             }
 
             if (user.UserRoles != null)
             {
                 foreach (var ur in user.UserRoles)
                 {
-                    if (ur.Role != null)
+                    if (ur.Role != null && ur.Role.Name != null)
                     {
                         claims.Add(new Claim(ClaimTypes.Role, ur.Role.Name));
                     }

@@ -6,6 +6,7 @@ import { ColaboradorDetails } from '../interfaces/colaboradorDetails';
 import { CriarColaboradorRequest } from '../interfaces/criarColaboradorRequest';
 import { environment } from '../../environments/environment';
 import { UserDetailsDto } from '../interfaces/userDetailsDto';
+import { CargoDto } from '../interfaces/cargoDto';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +29,11 @@ export class ColaboradorService {
    */
   public criarColaborador(colaborador: CriarColaboradorRequest): Observable<any> {
     return this.http.post<any>(this.apiUrl, colaborador);
+  }
+  
+  // Adiciona este método
+  getCargos(): Observable<CargoDto[]> {
+    return this.http.get<CargoDto[]>(`${this.apiUrl}/cargos`); // Ajusta a URL se for diferente
   }
 
   // ---

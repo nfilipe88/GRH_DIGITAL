@@ -8,9 +8,9 @@ namespace HRManager.WebAPI.Models
     {
         public Guid AvaliacaoId { get; set; }
         [JsonIgnore]
-        public virtual Avaliacao Avaliacao { get; set; }
+        public virtual Avaliacao? Avaliacao { get; set; }
         public Guid CompetenciaId { get; set; }
-        public virtual Competencia Competencia { get; set; }
+        public virtual Competencia? Competencia { get; set; }
         // --- As Notas (1 a 5) ---
         public int? NotaAutoAvaliacao { get; set; }
         public int? NotaGestor { get; set; }

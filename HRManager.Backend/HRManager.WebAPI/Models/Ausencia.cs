@@ -12,7 +12,7 @@ namespace HRManager.WebAPI.Models
         [Required]
         public Guid ColaboradorId { get; set; }
         [ForeignKey("ColaboradorId")]
-        public virtual Colaborador Colaborador { get; set; }
+        public virtual Colaborador? Colaborador { get; set; }
         // --- Detalhes do Pedido ---
         [Required]
         [JsonConverter(typeof(JsonStringEnumConverter))] // Para aparecer como texto no JSON

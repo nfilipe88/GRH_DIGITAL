@@ -4,6 +4,7 @@ using HRManager.WebAPI.Constants;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using HRManager.WebAPI.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRManager.WebAPI.Services
@@ -13,22 +14,42 @@ namespace HRManager.WebAPI.Services
         private readonly HRManagerDbContext _context;
         private readonly ITokenService _tokenService;
         private readonly ITenantService _tenantService;
+        // 1. Injeção dos gestores do Identity
+        private readonly UserManager<User> _userManager;
+        private readonly RoleManager<Role> _roleManager;
 
-        public AuthService(HRManagerDbContext context, ITokenService tokenService, ITenantService tenantService)
+        public AuthService(
+            HRManagerDbContext context, 
+            ITokenService tokenService, 
+            ITenantService tenantService,
+            UserManager<User> userManager,
+            RoleManager<Role> roleManager)
         {
             _context = context;
             _tokenService = tokenService;
             _tenantService = tenantService;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         public async Task<string> LoginAsync(LoginRequest request)
         {
+            // Nota: Mantemos a consulta via _context aqui porque o TokenService 
+            // precisa dos dados relacionados (Instituicao, Roles) carregados (Include).
+            // O FindByEmailAsync padrão do Identity não traz os Includes por defeito.
             var user = await _context.Users
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .Include(u => u.Instituicao)
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            if (user == null)
+                throw new UnauthorizedAccessException("Credenciais inválidas.");
+
+            // 2. Validação Segura: Usamos o UserManager para verificar a password
+            // Isto garante que o sistema usa o algoritmo de hash configurado no Identity
+            var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
+
+            if (!passwordValid)
                 throw new UnauthorizedAccessException("Credenciais inválidas.");
 
             if (!user.IsAtivo)
@@ -39,35 +60,79 @@ namespace HRManager.WebAPI.Services
 
         public async Task<string> RegisterAsync(RegisterRequest request)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+            // O CreateAsync já verifica duplicados, mas podemos manter esta verificação rápida
+            // se quisermos uma mensagem de erro personalizada antes de tentar criar.
+            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            if (existingUser != null)
                 throw new ValidationException("Este endereço de email já se encontra registado.");
 
             var instituicaoId = _tenantService.GetInstituicaoId();
 
+            // 3. Criação do Objeto User (SEM definir PasswordHash manualmente)
             var newUser = new User
             {
-                NomeCompleto = request.Nome,
+                UserName = request.Email, // O Identity exige UserName (geralmente igual ao email)
                 Email = request.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                NomeCompleto = request.Nome,
                 InstituicaoId = instituicaoId,
-                IsAtivo = true
+                IsAtivo = true,
+                SecurityStamp = Guid.NewGuid().ToString() // Boa prática para invalidar tokens antigos se mudar algo crítico
             };
 
+            // 4. Criação Segura via UserManager
+            // Ele trata do Hash da password e validações de complexidade automaticamente
+            var result = await _userManager.CreateAsync(newUser, request.Password);
+
+            if (!result.Succeeded)
+            {
+                // Agrupa os erros do Identity numa mensagem legível
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                throw new ValidationException($"Erro ao criar utilizador: {errors}");
+            }
+
+            // 5. Atribuição de Role via Identity
             var roleName = string.IsNullOrEmpty(request.Role) ? RolesConstants.Colaborador : request.Role;
-            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
             
-            if (role == null) throw new InvalidOperationException($"Role '{roleName}' não encontrada.");
+            // Verifica se a role existe
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                // Opcional: Rollback se falhar (apagar o user criado), 
+                // ou garantir que as roles existem no Seeder.
+                throw new InvalidOperationException($"Role '{roleName}' não encontrada.");
+            }
 
-            newUser.UserRoles.Add(new UserRole { Role = role, User = newUser });
+            var roleResult = await _userManager.AddToRoleAsync(newUser, roleName);
+            
+            if (!roleResult.Succeeded)
+            {
+                throw new ValidationException("Erro ao associar perfil ao utilizador.");
+            }
 
-            _context.Users.Add(newUser);
-            await _context.SaveChangesAsync();
+            // Precisamos carregar a Instituição para o TokenService, 
+            // pois o objeto 'newUser' ainda não tem a propriedade de navegação preenchida.
+            // Uma forma simples é reatribuir o ID ou carregar do contexto, 
+            // mas como acabamos de criar, sabemos o ID.
+            if (newUser.Instituicao == null && instituicaoId != Guid.Empty)
+            {
+                newUser.Instituicao = await _context.Instituicoes.FindAsync(instituicaoId);
+            }
 
-            return _tokenService.CreateToken(newUser);
+            // Se o TokenService precisar da Role na lista UserRoles para gerar claims:
+            // O AddToRoleAsync salva na BD, mas não atualiza a lista em memória 'newUser.UserRoles'.
+            // Para garantir o token correto, podemos buscar o user completo ou construir manualmente para o token.
+            // Solução robusta: buscar o utilizador completo agora.
+            var userForToken = await _context.Users
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .Include(u => u.Instituicao)
+                .FirstAsync(u => u.Id == newUser.Id);
+
+            return _tokenService.CreateToken(userForToken);
         }
 
         public async Task<UserDetailsDto> GetCurrentUserAsync(string email)
         {
+            // Mantemos a leitura via Context para performance (Includes), 
+            // já que é apenas leitura.
             var user = await _context.Users
                 .Include(u => u.Instituicao)
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
@@ -81,7 +146,7 @@ namespace HRManager.WebAPI.Services
             {
                 Id = user.Id,
                 NomeCompleto = user.NomeCompleto,
-                Email = user.Email,
+                Email = user.Email ?? "",
                 Cargo = roleName, 
                 InstituicaoNome = user.Instituicao?.Nome ?? "N/A",
                 IsAtivo = user.IsAtivo
@@ -104,11 +169,10 @@ namespace HRManager.WebAPI.Services
                 {
                     Id = u.Id,
                     Nome = u.NomeCompleto,
-                    Email = u.Email,
-                    // CORREÇÃO AQUI: Verificação de nulos em cadeia (CS8602)
-                    Role = u.UserRoles.FirstOrDefault() != null 
-                           ? (u.UserRoles.FirstOrDefault()!.Role != null ? u.UserRoles.FirstOrDefault()!.Role.Name : "N/A") 
-                           : "N/A"
+                    Email = u.Email ?? "",
+                    Role = u.UserRoles.FirstOrDefault() != null && u.UserRoles.FirstOrDefault()!.Role != null
+                        ? u.UserRoles.FirstOrDefault()!.Role!.Name ?? "N/A"
+                        : "N/A"
                 })
                 .ToListAsync();
         }

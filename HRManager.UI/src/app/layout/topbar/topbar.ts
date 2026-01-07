@@ -46,12 +46,13 @@ export class Topbar {
     this.authService.getUserDetails().subscribe({
       next: (user: UserDetailsDto) => {
         this.userEmail = user.email;
-        this.userInitial = user.email.charAt(0).toUpperCase();
+        this.userInitial = user.email ? user.email.charAt(0).toUpperCase() : '?';
 
         // Construir subtítulo (ex: "GestorMaster" ou "GestorRH - TechCorp")
-        this.userRoleAndInst = user.roles.join(', ');
-        if (user.nomeInstituicao) {
-          this.userRoleAndInst += ` • ${user.nomeInstituicao}`;
+        const roles = user.roles || [];
+        this.userRoleAndInst = roles.join(', ');
+        if (user.instituicaoNome) {
+          this.userRoleAndInst += ` • ${user.instituicaoNome}`;
         }
       },
       error: (err) => {

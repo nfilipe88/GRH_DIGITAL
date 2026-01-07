@@ -1,9 +1,13 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
+  "cli": {
+    "packageManager": "npm",
+    "analytics": false
+  },
   "newProjectRoot": "projects",
   "projects": {
-    "HRManager.Frontend": {
+    "HRManager.UI": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -22,6 +26,7 @@
               }
             ],
             "styles": [
+              "src/material-theme.scss",
               "src/styles.css"
             ]
           },
@@ -53,36 +58,18 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "HRManager.Frontend:build:production"
+              "buildTarget": "HRManager.UI:build:production"
             },
             "development": {
-              "buildTarget": "HRManager.Frontend:build:development"
+              "buildTarget": "HRManager.UI:build:development"
             }
           },
           "defaultConfiguration": "development"
         },
-        "extract-i18n": {
-          "builder": "@angular/build:extract-i18n"
-        },
         "test": {
-          "builder": "@angular/build:karma",
-          "options": {
-            "tsConfig": "tsconfig.spec.json",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
-            ],
-            "styles": [
-              "src/styles.css"
-            ]
-          }
+          "builder": "@angular/build:unit-test"
         }
       }
     }
-  },
-  "cli": {
-    "analytics": "5ce1a8bb-4c2b-4e11-a981-3f20bf4e345c"
   }
 }

@@ -32,7 +32,7 @@ namespace HRManager.WebAPI.Models
         public User? User { get; set; }
         // Gestor (Hierarquia - Opcional pois o chefe máximo não tem gestor)
         public Guid? GestorId { get; set; }
-        [ForeignKey("CargoId")]
+        [ForeignKey("GestorId")]
         public Colaborador? Gestor { get; set; }
         // Opcional: Para facilitar a navegação inversa (quem são os meus subordinados?)
         public ICollection<Colaborador> Subordinados { get; set; } = new List<Colaborador>();

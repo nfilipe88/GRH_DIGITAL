@@ -3,6 +3,6 @@ export interface UserDetailsDto {
   id: string;
   email: string;
   roles: string[];
-  nomeInstituicao?: string;
+  instituicaoNome?: string;
   instituicaoId?: string;
 }
