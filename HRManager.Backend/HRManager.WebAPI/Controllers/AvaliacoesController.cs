@@ -20,7 +20,7 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpPost("ciclos")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)]
+        [Authorize(Roles = RolesConstants.AdminAccess)]
         public async Task<IActionResult> CriarCiclo([FromBody] CriarCicloRequest request)
         {
             var criado = await _avaliacaoService.CriarCicloAsync(request);
@@ -28,7 +28,7 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpPost("competencias")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)]
+        [Authorize(Roles = RolesConstants.AdminAccess)]
         public async Task<IActionResult> CriarCompetencia([FromBody] CriarCompetenciaRequest request)
         {
             var criada = await _avaliacaoService.CriarCompetenciaAsync(request);
@@ -37,10 +37,13 @@ namespace HRManager.WebAPI.Controllers
 
 
         [HttpPost("iniciar")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)]
+        [Authorize(Roles = RolesConstants.AdminAccess)]
         public async Task<IActionResult> IniciarAvaliacao(Guid colaboradorId, Guid cicloId)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email))            
+                return Unauthorized(new {Message= "Não foi possivel identificar o e-email do utilizador no token." });
+            
             var result = await _avaliacaoService.IniciarAvaliacaoAsync(colaboradorId, cicloId, email);
             return Ok(result);
         }
@@ -66,15 +69,19 @@ namespace HRManager.WebAPI.Controllers
         public async Task<IActionResult> GetMinhasAvaliacoes()
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email))
+                return Unauthorized(new { Message = "Não foi possível identificar o email do utilizador no token." });
             var result = await _avaliacaoService.GetMinhasAvaliacoesAsync(email);
             return Ok(result);
         }
 
         [HttpGet("equipa")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)]
+        [Authorize(Roles = RolesConstants.AdminAccess)]
         public async Task<IActionResult> GetAvaliacoesEquipa()
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
+            if(string.IsNullOrEmpty(email))
+                return Unauthorized(new {Message="Não foi possível identificar o email do utilizador no token."});
             var result = await _avaliacaoService.GetAvaliacoesEquipaAsync(email);
             return Ok(result);
         }
@@ -83,6 +90,8 @@ namespace HRManager.WebAPI.Controllers
         public async Task<IActionResult> GetAvaliacaoPorId(Guid id)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
+            if(string.IsNullOrEmpty(email))
+                return Unauthorized(new {Message="Não foi possível identificar o email do utilizador no token."});
 
             try
             {
@@ -103,16 +112,20 @@ namespace HRManager.WebAPI.Controllers
         public async Task<IActionResult> RealizarAutoAvaliacao(Guid id, [FromBody] RealizarAutoAvaliacaoRequest request)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email))
+                return Unauthorized(new { Message = "Não foi possível identificar o email do utilizador no token." });
             // Middleware trata UnauthorizedAccessException se tentar editar a de outro
             var result = await _avaliacaoService.RealizarAutoAvaliacaoAsync(id, request, email);
             return Ok(result);
         }
 
         [HttpPut("{id}/avaliacao-gestor")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)]
+        [Authorize(Roles = RolesConstants.AdminAccess)]
         public async Task<IActionResult> SubmeterAvaliacaoGestor(Guid id, [FromBody] RealizarAvaliacaoGestorRequest request)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email))
+                return Unauthorized(new { Message = "Não foi possível identificar o email do utilizador no token." });
             var result = await _avaliacaoService.RealizarAvaliacaoGestorAsync(id, request, email);
             return Ok(result);
         }

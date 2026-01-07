@@ -1,210 +1,199 @@
 ﻿using HRManager.WebAPI.Constants;
 using HRManager.WebAPI.Domain.enums;
 using HRManager.WebAPI.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRManager.WebAPI.Data
+{
+    public static class DbSeeder
     {
-        public static class DbSeeder
+        public static async Task Seed(HRManagerDbContext context, UserManager<User> userManager, RoleManager<Role> roleManager)
         {
-            public static void Seed(HRManagerDbContext context)
+            // 1. Evita duplicar se a instituição já existir
+            if (await context.Instituicoes.AnyAsync()) return;
+
+            // --- IDs FIXOS (Para manter as relações consistentes) ---
+            var empresaId = Guid.NewGuid();
+
+            // IDs Users
+            var adminUserId = Guid.NewGuid();
+            var gestorUserId = Guid.NewGuid();
+            var colabUserId = Guid.NewGuid();
+
+            // IDs Colaboradores (Perfis)
+            var perfilAdminId = Guid.NewGuid();
+            var perfilGestorId = Guid.NewGuid();
+            var perfilColabId = Guid.NewGuid();
+
+            // ID Ciclo Avaliação
+            var cicloId = Guid.NewGuid();
+
+            // 2. Criar a Instituição
+            var empresa = new Instituicao
             {
-                // 1. Garante que a BD existe
-                context.Database.EnsureCreated();
-
-                // 2. Se já existe uma Instituição, assume que o seed já correu e para.
-                if (context.Instituicoes.Any()) return;
-
-                // --- IDs FIXOS (Para garantir integridade nas relações) ---
-                var empresaId = Guid.NewGuid();
-
-                // IDs dos Cargos
-                var cargoAdminId = Guid.NewGuid();
-                var cargoDiretorId = Guid.NewGuid();
-                var cargoDevId = Guid.NewGuid();
-
-                // IDs dos Perfis (Colaboradores)
-                var perfilMasterId = Guid.NewGuid();
-                var perfilGestorId = Guid.NewGuid();
-                var perfilColabId = Guid.NewGuid();
-
-                // 3. Criar a Instituição
-                var empresa = new Instituicao
-                {
-                    Id = empresaId,
-                    Nome = "Tech Solutions Angola",
-                    NIF = "500000000",
-                    IdentificadorUnico = "tech-solutions",
-                    EmailContato = "contacto@techsolutions.ao",
-                    Telemovel = 923000000,
-                    Endereco = "Talatona, Luanda, Angola",
-                    IsAtiva = true,
-                    DataCriacao = DateTime.UtcNow
-                };
-                context.Instituicoes.Add(empresa);
-
-                // 4. Criar ou Obter Roles
-                var roleMasterId = Guid.NewGuid();
-                var roleGestorId = Guid.NewGuid();
-                var roleColabId = Guid.NewGuid();
-
-                if (!context.Roles.Any())
-                {
-                    var roles = new List<Role>
-                {
-                    new Role { Id = roleMasterId, Name = RolesConstants.GestorMaster, Description = "Acesso total ao sistema", InstituicaoId = Guid.Empty },
-                    new Role { Id = roleGestorId, Name = RolesConstants.GestorRH, Description = "Gestão de RH e Equipas", InstituicaoId = Guid.Empty },
-                    new Role { Id = roleColabId, Name = RolesConstants.Colaborador, Description = "Acesso pessoal (Self-Service)", InstituicaoId = Guid.Empty }
-                };
-                    context.Roles.AddRange(roles);
-                }
-                else
-                {
-                    // Se as roles já existirem (ex: criadas manualmente), buscamos os IDs
-                    roleMasterId = context.Roles.First(r => r.Name == RolesConstants.GestorMaster).Id;
-                    roleGestorId = context.Roles.First(r => r.Name == RolesConstants.GestorRH).Id;
-                    roleColabId = context.Roles.First(r => r.Name == RolesConstants.Colaborador).Id;
-                }
-
-                context.SaveChanges();
-
-                // 5. Criar Cargos
-                var cargos = new List<Cargo>
-            {
-                new Cargo { Id = cargoAdminId, Nome = "Diretor Geral", InstituicaoId = empresaId, IsAtivo = true },
-                new Cargo { Id = cargoDiretorId, Nome = "Gestora de RH", InstituicaoId = empresaId, IsAtivo = true },
-                new Cargo { Id = cargoDevId, Nome = "Desenvolvedor Sénior", InstituicaoId = empresaId, IsAtivo = true }
+                Id = empresaId,
+                Nome = "Tech Solutions Angola",
+                NIF = "500000000",
+                EmailContato = "geral@techsolutions.ao",
+                Telemovel = 923000000,
+                Endereco = "Talatona, Luanda",
+                IsAtiva = true,
+                DataCriacao = DateTime.UtcNow
             };
-                context.Cargos.AddRange(cargos);
-                context.SaveChanges();
+            context.Instituicoes.Add(empresa);
+            await context.SaveChangesAsync();
 
-                // 6. Criar Users (Login)
-                // Nota: A senha para todos é "123456"
-                var passwordHash = BCrypt.Net.BCrypt.HashPassword("123456");
-
-                var adminUser = new User
+            // 3. Criar Roles
+            string[] roles = { RolesConstants.GestorMaster, RolesConstants.GestorRH, RolesConstants.Colaborador };
+            foreach (var roleName in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(roleName))
                 {
-                    Id = Guid.NewGuid(),
-                    NomeCompleto = "Administrador Sistema",
-                    Email = "admin@tech.com",
-                    PasswordHash = passwordHash,
-                    InstituicaoId = empresaId,
-                    IsAtivo = true,
-                    DataCriacao = DateTime.UtcNow
-                };
-
-                var gestorUser = new User
-                {
-                    Id = Guid.NewGuid(),
-                    NomeCompleto = "Maria Gestora",
-                    Email = "rh@tech.com",
-                    PasswordHash = passwordHash,
-                    InstituicaoId = empresaId,
-                    IsAtivo = true,
-                    DataCriacao = DateTime.UtcNow
-                };
-
-                var colabUser = new User
-                {
-                    Id = Guid.NewGuid(),
-                    NomeCompleto = "João Desenvolvedor",
-                    Email = "joao@tech.com",
-                    PasswordHash = passwordHash,
-                    InstituicaoId = empresaId,
-                    IsAtivo = true,
-                    DataCriacao = DateTime.UtcNow
-                };
-
-                context.Users.AddRange(adminUser, gestorUser, colabUser);
-                context.SaveChanges();
-
-                // 7. Associar Users às Roles
-                context.UserRoles.AddRange(
-                    new UserRole { UserId = adminUser.Id, RoleId = roleMasterId },
-                    new UserRole { UserId = gestorUser.Id, RoleId = roleGestorId },
-                    new UserRole { UserId = colabUser.Id, RoleId = roleColabId }
-                );
-                context.SaveChanges();
-
-                // 8. Criar Perfis de Colaborador (Com Hierarquia)
-
-                // 8.1 - Perfil ADMIN (Topo da pirâmide)
-                var perfilAdmin = new Colaborador
-                {
-                    Id = perfilMasterId,
-                    UserId = adminUser.Id,
-                    InstituicaoId = empresaId,
-                    NomeCompleto = adminUser.NomeCompleto,
-                    EmailPessoal = adminUser.Email,
-                    CargoId = cargoAdminId, // Diretor Geral
-                    Departamento = "Administração",
-                    NIF = "000000001",
-                    DataNascimento = new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                    DataAdmissao = DateTime.UtcNow.AddYears(-10),
-                    Morada = "Mutamba, Luanda",
-                    Telemovel = 900000001,
-                    SaldoFerias = 30,
-                    TipoContrato = "Indeterminado",
-                    IsAtivo = true,
-                    GestorId = null // Ninguém manda no Admin
-                };
-
-                // 8.2 - Perfil GESTOR RH (Reporta ao Admin)
-                var perfilGestor = new Colaborador
-                {
-                    Id = perfilGestorId,
-                    UserId = gestorUser.Id,
-                    InstituicaoId = empresaId,
-                    NomeCompleto = gestorUser.NomeCompleto,
-                    EmailPessoal = gestorUser.Email,
-                    CargoId = cargoDiretorId, // Gestora RH
-                    Departamento = "Recursos Humanos",
-                    NIF = "000000002",
-                    DataNascimento = new DateTime(1990, 5, 15, 0, 0, 0, DateTimeKind.Utc),
-                    DataAdmissao = DateTime.UtcNow.AddYears(-5),
-                    Morada = "Kilamba, Luanda",
-                    Telemovel = 900000002,
-                    SaldoFerias = 22,
-                    TipoContrato = "Indeterminado",
-                    IsAtivo = true,
-                    GestorId = perfilMasterId // <-- Reporta ao Admin
-                };
-
-                // 8.3 - Perfil COLABORADOR (Reporta à Gestora de RH)
-                var perfilColab = new Colaborador
-                {
-                    Id = perfilColabId,
-                    UserId = colabUser.Id,
-                    InstituicaoId = empresaId,
-                    NomeCompleto = colabUser.NomeCompleto,
-                    EmailPessoal = colabUser.Email,
-                    CargoId = cargoDevId, // Developer
-                    Departamento = "Tecnologia",
-                    NIF = "000000003",
-                    DataNascimento = new DateTime(1995, 8, 20, 0, 0, 0, DateTimeKind.Utc),
-                    DataAdmissao = DateTime.UtcNow.AddYears(-1),
-                    Morada = "Viana, Luanda",
-                    Telemovel = 900000003,
-                    SaldoFerias = 15,
-                    TipoContrato = "Termo Certo",
-                    IsAtivo = true,
-                    GestorId = perfilGestorId // <-- Reporta à Maria Gestora
-                };
-
-                context.Colaboradores.AddRange(perfilAdmin, perfilGestor, perfilColab);
-                context.SaveChanges();
-
-                // 9. Competências (Para testes de avaliação)
-                context.Competencias.AddRange(
-                    new Competencia { Nome = "Liderança", Tipo = TipoCompetencia.Comportamental, InstituicaoId = empresaId, IsAtiva = true },
-                    new Competencia { Nome = "Comunicação", Tipo = TipoCompetencia.Comportamental, InstituicaoId = empresaId, IsAtiva = true },
-                    new Competencia { Nome = "C# .NET Core", Tipo = TipoCompetencia.Tecnica, InstituicaoId = empresaId, IsAtiva = true },
-                    new Competencia { Nome = "Angular", Tipo = TipoCompetencia.Tecnica, InstituicaoId = empresaId, IsAtiva = true },
-                    new Competencia { Nome = "Gestão de Conflitos", Tipo = TipoCompetencia.Comportamental, InstituicaoId = empresaId, IsAtiva = true }
-                );
-
-                context.SaveChanges();
+                    await roleManager.CreateAsync(new Role { Name = roleName, Description = $"Perfil de {roleName}" });
+                }
             }
-        
+
+            // 4. Criar Cargos
+            var cargos = new List<Cargo>
+            {
+                new Cargo { Nome = "Diretor Geral", InstituicaoId = empresaId, IsAtivo = true },
+                new Cargo { Nome = "Gestora de RH", InstituicaoId = empresaId, IsAtivo = true },
+                new Cargo { Nome = "Full-Stack Developer", InstituicaoId = empresaId, IsAtivo = true }
+            };
+            context.Cargos.AddRange(cargos);
+            await context.SaveChangesAsync();
+
+            var cargoAdmin = await context.Cargos.FirstAsync(c => c.Nome == "Diretor Geral");
+            var cargoGestor = await context.Cargos.FirstAsync(c => c.Nome == "Gestora de RH");
+            var cargoDev = await context.Cargos.FirstAsync(c => c.Nome == "Full-Stack Developer");
+
+            // 5. Criar Users (Password padrão: 123456 - user@123)
+            // Nota: Calculamos a hash manualmente com BCrypt para ser compatível com o AuthService
+            var passwordPadraoHash = BCrypt.Net.BCrypt.HashPassword("user@123");
+
+            var adminUser = new User
+            {
+                Id = adminUserId,
+                UserName = "admin@tech.com",
+                Email = "admin@tech.com",
+                NomeCompleto = "Sr. Administrador",
+                InstituicaoId = empresaId,
+                IsAtivo = true,
+                EmailConfirmed = true,
+                PasswordHash = passwordPadraoHash // <--- Hash definida manualmente
+            };
+
+            var gestorUser = new User
+            {
+                Id = gestorUserId,
+                UserName = "rh@tech.com",
+                Email = "rh@tech.com",
+                NomeCompleto = "Maria Gestora",
+                InstituicaoId = empresaId,
+                IsAtivo = true,
+                EmailConfirmed = true,
+                PasswordHash = passwordPadraoHash
+            };
+
+            var colabUser = new User
+            {
+                Id = colabUserId,
+                UserName = "joao@tech.com",
+                Email = "joao@tech.com",
+                NomeCompleto = "João Dev",
+                InstituicaoId = empresaId,
+                IsAtivo = true,
+                EmailConfirmed = true,
+                PasswordHash = passwordPadraoHash
+            };
+
+            // Criar utilizadores (sem passar a password como argumento, para manter a nossa hash BCrypt)
+            if (await userManager.FindByIdAsync(adminUserId.ToString()) == null)
+            {
+                await userManager.CreateAsync(adminUser);
+                await userManager.AddToRoleAsync(adminUser, RolesConstants.GestorMaster);
+            }
+
+            if (await userManager.FindByIdAsync(gestorUserId.ToString()) == null)
+            {
+                await userManager.CreateAsync(gestorUser);
+                await userManager.AddToRoleAsync(gestorUser, RolesConstants.GestorRH);
+            }
+
+            if (await userManager.FindByIdAsync(colabUserId.ToString()) == null)
+            {
+                await userManager.CreateAsync(colabUser);
+                await userManager.AddToRoleAsync(colabUser, RolesConstants.Colaborador);
+            }
+
+            // 6. Criar Perfis de Colaborador
+            var colaboradores = new List<Colaborador>
+            {
+                new Colaborador { Id = perfilAdminId, UserId = adminUserId, InstituicaoId = empresaId, NomeCompleto = adminUser.NomeCompleto, EmailPessoal = adminUser.Email, CargoId = cargoAdmin.Id, Departamento = "Board", NIF = "000000001", DataAdmissao = DateTime.UtcNow.AddYears(-10), IsAtivo = true },
+                new Colaborador { Id = perfilGestorId, UserId = gestorUserId, InstituicaoId = empresaId, NomeCompleto = gestorUser.NomeCompleto, EmailPessoal = gestorUser.Email, CargoId = cargoGestor.Id, Departamento = "RH", NIF = "000000002", DataAdmissao = DateTime.UtcNow.AddYears(-5), GestorId = perfilAdminId, IsAtivo = true },
+                new Colaborador { Id = perfilColabId, UserId = colabUserId, InstituicaoId = empresaId, NomeCompleto = colabUser.NomeCompleto, EmailPessoal = colabUser.Email, CargoId = cargoDev.Id, Departamento = "IT", NIF = "000000003", DataAdmissao = DateTime.UtcNow.AddYears(-2), GestorId = perfilGestorId, IsAtivo = true }
+            };
+            context.Colaboradores.AddRange(colaboradores);
+
+            // 7. Competências
+            context.Competencias.AddRange(
+                new Competencia { Nome = "C# Avançado", Tipo = TipoCompetencia.Tecnica, InstituicaoId = empresaId, IsAtiva = true },
+                new Competencia { Nome = "Comunicação", Tipo = TipoCompetencia.Comportamental, InstituicaoId = empresaId, IsAtiva = true },
+                new Competencia { Nome = "Trabalho em Equipa", Tipo = TipoCompetencia.Comportamental, InstituicaoId = empresaId, IsAtiva = true }
+            );
+            await context.SaveChangesAsync();
+
+            // --- CENÁRIOS DE TESTE ---
+
+            // 8. Ciclo de Avaliação Ativo
+            var ciclo = new CicloAvaliacao
+            {
+                Id = cicloId,
+                Nome = "Avaliação Anual 2024",
+                DataInicio = DateTime.UtcNow.AddDays(-10),
+                DataFim = DateTime.UtcNow.AddDays(20),
+                IsAtivo = true,
+                InstituicaoId = empresaId
+            };
+            context.CiclosAvaliacao.Add(ciclo);
+
+            // 9. Avaliação iniciada para o João (Para ele fazer Autoavaliação)
+            var avaliacao = new Avaliacao
+            {
+                Id = Guid.NewGuid(),
+                CicloId = cicloId,
+                ColaboradorId = perfilColabId, // João é o avaliado (Colaborador)
+                GestorId = gestorUserId,       // Usar o ID do User, não o do Perfil/Colaborador
+                Estado = EstadoAvaliacao.AnaliseGestor,
+                DataCriacao = DateTime.UtcNow,
+                InstituicaoId = empresaId
+            };
+            context.Avaliacoes.Add(avaliacao);
+
+            // 10. Pedido de Ausência Pendente (João pede Férias)
+            context.Ausencias.Add(new Ausencia
+            {
+                ColaboradorId = perfilColabId,
+                Tipo = TipoAusencia.Ferias,
+                DataInicio = DateTime.UtcNow.AddDays(5),
+                DataFim = DateTime.UtcNow.AddDays(10),
+                Estado = EstadoAusencia.Pendente,
+                Motivo = "Férias anuais agendadas",
+                InstituicaoId = empresaId
+            });
+
+            // 11. Pedido de Declaração (João pede Declaração de Rendimentos)
+            context.PedidosDeclaracao.Add(new PedidoDeclaracao
+            {
+                ColaboradorId = perfilColabId,
+                Tipo = TipoDeclaracao.ComprovativoVinculo,
+                Observacoes = "Crédito Habitação",
+                Estado = EstadoPedidoDeclaracao.Pendente,
+                DataSolicitacao = DateTime.UtcNow
+            });
+
+            await context.SaveChangesAsync();
+        }
     }
 }

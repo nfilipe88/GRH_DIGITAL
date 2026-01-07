@@ -1,11 +1,17 @@
 using HRManager.Application.Interfaces;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 
-public class HRManagerDbContext : DbContext
+public class HRManagerDbContext : IdentityDbContext<User, Role, Guid, IdentityUserClaim<Guid>,
+        UserRole,
+        IdentityUserLogin<Guid>,
+        IdentityRoleClaim<Guid>,
+        IdentityUserToken<Guid>>
 {
     private readonly ITenantService _tenantService;
 
@@ -15,21 +21,18 @@ public class HRManagerDbContext : DbContext
         _tenantService = tenantService;
     }
 
-    public DbSet<Instituicao> Instituicoes { get; set; }
-    public DbSet<User> Users { get; set; }
-    public DbSet<Colaborador> Colaboradores { get; set; }
-    public DbSet<Ausencia> Ausencias { get; set; }
-    public DbSet<Role> Roles { get; set; }
-    public DbSet<UserRole> UserRoles { get; set; }
-    public DbSet<Cargo> Cargos { get; set; }
-    public DbSet<Competencia> Competencias { get; set; }
-    public DbSet<HabilitacaoLiteraria> HabilitacoesLiterarias { get; set; }
-    public DbSet<CertificacaoProfissional> CertificacoesProfissionais { get; set; }
-    public DbSet<PedidoDeclaracao> PedidosDeclaracao { get; set; }
-    public DbSet<Notificacao> Notificacoes { get; set; }
-    public DbSet<CicloAvaliacao> CiclosAvaliacao { get; set; }
     public DbSet<Avaliacao> Avaliacoes { get; set; }
     public DbSet<AvaliacaoItem> AvaliacaoItens { get; set; }
+    public DbSet<Ausencia> Ausencias { get; set; }
+    public DbSet<Cargo> Cargos { get; set; }
+    public DbSet<CertificacaoProfissional> CertificacoesProfissionais { get; set; }
+    public DbSet<CicloAvaliacao> CiclosAvaliacao { get; set; }
+    public DbSet<Colaborador> Colaboradores { get; set; }
+    public DbSet<Competencia> Competencias { get; set; }
+    public DbSet<HabilitacaoLiteraria> HabilitacoesLiterarias { get; set; }
+    public DbSet<Instituicao> Instituicoes { get; set; }
+    public DbSet<Notificacao> Notificacoes { get; set; }
+    public DbSet<PedidoDeclaracao> PedidosDeclaracao { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -41,18 +44,30 @@ public class HRManagerDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // 1. Configuração de UserRole (N:N)
-        modelBuilder.Entity<UserRole>()
-            .HasKey(ur => new { ur.UserId, ur.RoleId });
+        // ALTERAÇÃO 2: Configuração correta da tabela UserRoles personalizada
+        modelBuilder.Entity<UserRole>(b =>
+        {
+            b.HasKey(ur => new { ur.UserId, ur.RoleId }); // Define a chave composta
 
-        modelBuilder.Entity<UserRole>()
-            .HasOne(ur => ur.User)
-            .WithMany(u => u.UserRoles)
-            .HasForeignKey(ur => ur.UserId);
+            b.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .IsRequired();
 
-        modelBuilder.Entity<UserRole>()
-            .HasOne(ur => ur.Role)
-            .WithMany(r => r.UserRoles)
-            .HasForeignKey(ur => ur.RoleId);
+            b.HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired();
+
+            b.ToTable("UserRoles"); // Define o nome da tabela
+        });
+        // Configuração de nomes das tabelas (Opcional, mas recomendado para ficar limpo no PostgreSQL)
+        modelBuilder.Entity<User>(b => b.ToTable("Users"));
+        modelBuilder.Entity<Role>(b => b.ToTable("Roles"));
+        modelBuilder.Entity<IdentityUserClaim<Guid>>(b => b.ToTable("UserClaims"));
+        modelBuilder.Entity<IdentityUserLogin<Guid>>(b => b.ToTable("UserLogins"));
+        modelBuilder.Entity<IdentityRoleClaim<Guid>>(b => b.ToTable("RoleClaims"));
+        modelBuilder.Entity<IdentityUserToken<Guid>>(b => b.ToTable("UserTokens"));
 
         // 2. Configurações Específicas
         modelBuilder.Entity<Colaborador>()

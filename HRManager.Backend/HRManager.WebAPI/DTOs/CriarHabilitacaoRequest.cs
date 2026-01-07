@@ -10,10 +10,10 @@ namespace HRManager.WebAPI.DTOs
         public GrauAcademico Grau { get; set; }
 
         [Required]
-        public string Curso { get; set; }
+        public string Curso { get; set; } = string.Empty;
 
         [Required]
-        public string InstituicaoEnsino { get; set; }
+        public string InstituicaoEnsino { get; set; } = string.Empty;
 
         [Required]
         public DateTime DataConclusao { get; set; }

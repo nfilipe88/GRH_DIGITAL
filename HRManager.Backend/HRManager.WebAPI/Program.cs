@@ -1,10 +1,13 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using HRManager.Application.Interfaces;
+using HRManager.WebAPI.Data;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.Middlewares;
+using HRManager.WebAPI.Models;
 using HRManager.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
@@ -63,6 +66,21 @@ builder.Services.AddDbContext<HRManagerDbContext>(options =>
         });
 });
 
+// Registo dos Serviços de Identity (Necessário para o UserManager funcionar)
+builder.Services.AddIdentityCore<User>(options =>
+{
+    // Configurações opcionais de password
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+})
+.AddRoles<Role>() // Importante para gerir os perfis (GestorRH, Colaborador)
+.AddEntityFrameworkStores<HRManagerDbContext>() // Liga o Identity à tua BD
+.AddDefaultTokenProviders();
+// -------------------------------------
+
 // Adicionar o serviço de acesso ao contexto HTTP
 builder.Services.AddHttpContextAccessor();
 
@@ -73,6 +91,12 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    var jwtKey = jwtSettings["Key"];
+    if (string.IsNullOrWhiteSpace(jwtKey))
+    {
+        throw new InvalidOperationException("A chave JWT ('JwtSettings:Key') não está configurada.");
+    }
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -84,7 +108,7 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings["Audience"],
 
         // A chave de segurança
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 });
 
@@ -112,15 +136,22 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
+        // 1. Obter os serviços necessários
         var context = services.GetRequiredService<HRManagerDbContext>();
-        context.Database.Migrate(); // Aplica migrações pendentes
+        var userManager = services.GetRequiredService<UserManager<User>>();
+        var roleManager = services.GetRequiredService<RoleManager<Role>>();
 
-        // Executa o seed
-        HRManager.WebAPI.Data.DbSeeder.Seed(context);
+        // 2. Aplicar migrações pendentes automaticamente
+        context.Database.Migrate();
+
+        // 3. Executar o Seed (agora com await)
+        await DbSeeder.Seed(context, userManager, roleManager);
         Console.WriteLine("✅ Seed da Base de Dados executado com sucesso!");
     }
     catch (Exception ex)
     {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocorreu um erro ao popular a base de dados (Seeding).");
         Console.WriteLine($"❌ Erro ao executar o Seed: {ex.Message}");
     }
 }

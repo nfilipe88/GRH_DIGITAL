@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using HRManager.WebAPI.Constants;
 using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +10,7 @@ namespace HRManager.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "GestorMaster, GestorRH")]
+    [Authorize(Roles = RolesConstants.GestorMaster + "," + RolesConstants.GestorRH)]
     public class ColaboradoresController : ControllerBase
     {
         private readonly IColaboradorService _colaboradorService;
@@ -33,6 +34,15 @@ namespace HRManager.WebAPI.Controllers
             var novoColaborador = await _colaboradorService.CreateAsync(request);
             return CreatedAtAction(nameof(GetColaboradorPorId), new { id = novoColaborador.Id }, novoColaborador);
         }
+
+        // --- NOVO ENDPOINT (Colocar aqui para evitar conflito de rotas) ---
+        [HttpGet("cargos")]
+        public async Task<IActionResult> GetCargos()
+        {
+            var cargos = await _colaboradorService.GetCargosAsync();
+            return Ok(cargos);
+        }
+        // -----------------------------------------------------------------
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetColaboradorPorId(Guid id)

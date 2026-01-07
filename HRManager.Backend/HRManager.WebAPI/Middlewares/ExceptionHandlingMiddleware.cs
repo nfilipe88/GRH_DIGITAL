@@ -80,7 +80,7 @@ namespace HRManager.WebAPI.Middlewares
     public class ErrorDetails
     {
         public bool Success { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<string>? Errors { get; set; } // Lista de erros detalhados (opcional)
     }
 }

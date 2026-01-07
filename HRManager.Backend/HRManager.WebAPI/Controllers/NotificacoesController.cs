@@ -43,6 +43,7 @@ namespace HRManager.WebAPI.Controllers
         public async Task<IActionResult> MarcarComoLida(Guid id)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
             Guid userId = Guid.Parse(userIdStr);
 
             var notif = await _context.Notificacoes.FindAsync(id);

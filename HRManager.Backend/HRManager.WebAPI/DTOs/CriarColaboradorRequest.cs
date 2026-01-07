@@ -34,5 +34,6 @@ namespace HRManager.WebAPI.DTOs
         public string Localizacao { get; set; } = "Sede";
 
         public Guid? InstituicaoId { get; set; }
+        public Guid? GestorId { get; internal set; }
     }
 }

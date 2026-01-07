@@ -23,11 +23,14 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = RolesConstants.AdminAccess+","+RolesConstants.GeneralAccess)] // Uso da constante
         public async Task<IActionResult> GetAusencias()
         {
-            // O serviço já sabe lidar com as permissões se passarmos o contexto correto
-            // Usamos as extensões para limpar a leitura dos Claims
-            var email = User.FindFirst("email")?.Value; // ou User.Identity.Name
+            var email = User.FindFirst("email")?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized(new { Message = "Não foi possível identificar o email do utilizador no token." });
+            }
             var isGestor = User.IsRole(RolesConstants.GestorRH) || User.IsRole(RolesConstants.GestorMaster);
 
             var result = await _ausenciaService.GetAusenciasAsync(email, isGestor, User.IsRole(RolesConstants.GestorMaster));
@@ -68,15 +71,23 @@ namespace HRManager.WebAPI.Controllers
         public async Task<IActionResult> SolicitarAusencia([FromForm] CriarAusenciaRequest request)
         {
             var email = User.FindFirst("email")?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized(new { Message = "Não foi possível identificar o email do utilizador no token." });
+            }
             await _ausenciaService.SolicitarAusenciaAsync(email, request);
             return StatusCode(201, new { message = "Pedido de ausência submetido com sucesso." });
         }
 
         [HttpPut("{id}/responder")]
-        [Authorize(Roles = RolesConstants.ApenasGestores)] // Uso da constante
+        [Authorize(Roles = RolesConstants.AdminAccess)] // Uso da constante
         public async Task<IActionResult> ResponderAusencia(Guid id, [FromBody] ResponderAusenciaRequest request)
         {
             var email = User.FindFirst("email")?.Value;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized(new { Message = "Não foi possível identificar o email do utilizador no token." });
+            }
             var isGestorRH = User.IsRole(RolesConstants.GestorRH);
 
             await _ausenciaService.ResponderAusenciaAsync(id, request, email, isGestorRH);

@@ -1,4 +1,5 @@
-﻿using HRManager.WebAPI.Domain.Interfaces;
+﻿using HRManager.WebAPI.Constants;
+using HRManager.WebAPI.Domain.Interfaces;
 using HRManager.WebAPI.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ namespace HRManager.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "GestorMaster")] // Segurança Crítica: Apenas o "Dono" do SaaS deve mexer aqui
+    [Authorize(Roles = RolesConstants.GeneralAccess)] // Segurança Crítica: Apenas o "Dono" do SaaS deve mexer aqui
     public class InstituicoesController : ControllerBase
     {
         private readonly IInstituicaoService _instituicaoService;
