@@ -1,0 +1,22 @@
+# 1. Criar a pasta do projeto e entrar nela
+mkdir HRManager.Backend
+cd HRManager.Backend
+
+# 2. Criar a solução (o "container" dos projetos C#)
+dotnet new sln -n HRManager.sln
+
+# 3. Criar o projeto principal da API (o ponto de entrada)
+dotnet new webapi -n HRManager.WebAPI
+dotnet sln add HRManager.WebAPI
+
+cd HRManager.WebAPI
+
+# Entity Framework Core e ferramentas
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+
+# Provider para PostgreSQL (Npgsql)
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
+
+# Pacotes de injeção de dependência e configuração (se já não estiverem no template)
+dotnet add package Microsoft.Extensions.Configuration.Json

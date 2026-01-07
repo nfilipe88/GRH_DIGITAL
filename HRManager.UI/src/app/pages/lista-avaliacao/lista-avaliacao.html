@@ -1,0 +1,71 @@
+<div class="p-6 space-y-6">
+
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Minha Equipa</h1>
+      <p class="text-slate-500 dark:text-slate-400">Gerir avaliações de desempenho pendentes</p>
+    </div>
+    <div class="hidden md:block">
+      <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-100">
+        Ciclo Atual: 2025
+      </span>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center py-12">
+    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+  </div>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    <div *ngFor="let item of avaliacoes"
+         class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition flex flex-col justify-between h-full">
+
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-lg border border-slate-200">
+            {{ item.nomeColaborador.charAt(0) }}
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-800 dark:text-white">{{ item.nomeColaborador }}</h3>
+            <p class="text-xs text-slate-500 truncate">{{ item?.ciclo?.nome }}</p>
+          </div>
+        </div>
+        <span class="text-xs px-2 py-1 rounded-md border font-medium" [ngClass]="getEstadoClass(item.estado)">
+          {{ getEstadoLabel(item.estado) }}
+        </span>
+      </div>
+
+      <div class="w-full bg-slate-100 rounded-full h-2 mb-4 overflow-hidden">
+        <div class="bg-blue-600 h-2 rounded-full transition-all duration-500"
+             [style.width.%]="item.estado === 'Finalizada' ? 100 : (item.estado === 'EmAndamento' ? 50 : 0)">
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-50 dark:border-slate-700 flex justify-between items-center">
+        <div class="text-sm text-slate-500">
+          <span *ngIf="item.mediaFinal">Nota: <strong>{{ item.mediaFinal| number:'1.1-1' }}</strong></span>
+          <span *ngIf="!item.mediaFinal">Sem nota</span>
+        </div>
+
+        <button
+          (click)="iniciarAvaliacao(item.id)"
+          class="text-sm font-medium px-4 py-2 rounded-lg transition"
+          [ngClass]="item.estado === 'Finalizada'
+            ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-600/30'">
+          {{ item.estado === 'Finalizada' ? 'Ver Detalhes' : (item.estado === 'NaoIniciada' ? 'Iniciar Avaliação' : 'Continuar') }}
+        </button>
+      </div>
+
+    </div>
+
+    <div *ngIf="avaliacoes.length === 0" class="col-span-full py-12 text-center text-slate-400">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <p>Não há avaliações pendentes neste momento.</p>
+    </div>
+
+  </div>
+</div>

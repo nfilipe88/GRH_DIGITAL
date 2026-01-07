@@ -1,0 +1,51 @@
+<div class="container mx-auto p-8">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">Emissão de Declarações (RH)</h1>
+
+  <div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Colaborador</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let pedido of listaPedidos" [ngClass]="{'bg-blue-50': pedido.estado === 'Pendente'}">
+            <td class="px-6 py-4 font-medium">{{ pedido.nomeColaborador }}</td>
+            <td class="px-6 py-4 text-gray-600">{{ pedido.tipo }}</td>
+            <td class="px-6 py-4 text-gray-500">{{ pedido.dataSolicitacao | date:'dd/MM/yyyy' }}</td>
+            <td class="px-6 py-4">
+               <span [ngClass]="{
+                'bg-yellow-100 text-yellow-800': pedido.estado === 'Pendente',
+                'bg-green-100 text-green-800': pedido.estado === 'Concluido',
+                'bg-red-100 text-red-800': pedido.estado === 'Rejeitado'
+              }" class="px-2 py-1 rounded-full text-xs font-semibold">
+                {{ pedido.estado }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div *ngIf="pedido.estado === 'Pendente'" class="flex justify-end gap-2">
+                  <button (click)="aprovarEGerar(pedido)" class="text-green-600 hover:text-green-800 text-sm font-bold flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    Aprovar e Gerar
+                  </button>
+                  <button (click)="rejeitar(pedido)" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                    Rejeitar
+                  </button>
+              </div>
+
+              <div *ngIf="pedido.estado === 'Concluido' && pedido.caminhoFicheiro">
+                  <a [href]="getDocumentoUrl(pedido.caminhoFicheiro)" target="_blank" class="text-gray-500 text-sm hover:underline">Ver PDF</a>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="listaPedidos.length === 0">
+            <td colspan="5" class="text-center py-8 text-gray-500">Não há pedidos pendentes.</td>
+          </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

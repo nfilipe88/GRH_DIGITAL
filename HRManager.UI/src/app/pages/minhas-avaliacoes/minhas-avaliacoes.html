@@ -1,0 +1,82 @@
+<div class="container mx-auto p-8">
+  <h2 class="text-2xl font-bold mb-6 text-gray-800">As Minhas Avaliações</h2>
+
+  <div *ngIf="loading" class="text-center py-10 text-gray-500">
+    <p>A carregar...</p>
+  </div>
+
+  <div class="grid gap-4" *ngIf="!loading">
+    <div *ngFor="let av of avaliacoes" class="bg-white p-6 rounded-lg shadow-md border-l-4"
+      [ngClass]="{'border-blue-500': av.estado === 'NaoIniciada', 'border-green-500': av.estado === 'Finalizada', 'border-yellow-500': av.estado === 'EmAndamento'}">
+
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="text-lg font-semibold">{{ av?.ciclo?.nome }}</h3>
+          <p class="text-sm text-gray-500">Estado: <span class="font-medium">{{ av.estado }}</span></p>
+
+          <p *ngIf="av.estado === 'Finalizada'" class="text-sm font-bold text-green-600 mt-1">
+            Nota Final: {{ av.mediaFinal| number:'1.1-1' }}
+          </p>
+        </div>
+
+        <button *ngIf="av.estado !== 'Finalizada'" (click)="abrirAutoAvaliacao(av)"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+          Preencher Autoavaliação
+        </button>
+
+        <button *ngIf="av.estado === 'Finalizada'" class="text-gray-400 border border-gray-300 px-4 py-2 rounded cursor-default">
+          Concluída
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="avaliacoes.length === 0" class="text-center text-gray-500 py-8 border-2 border-dashed border-gray-200 rounded-lg">
+      Nenhuma avaliação atribuída neste momento.
+    </div>
+  </div>
+
+  <div *ngIf="isModalAberto && avaliacaoSelecionada" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+
+      <div class="p-6 border-b flex justify-between items-center">
+        <div>
+          <h3 class="text-xl font-bold text-gray-800">Autoavaliação</h3>
+          <p class="text-sm text-gray-500">{{ avaliacaoSelecionada.ciclo.nome }}</p>
+        </div>
+        <button (click)="fecharModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+      </div>
+
+      <div class="p-6 overflow-y-auto flex-1 space-y-6">
+        <div *ngFor="let item of avaliacaoSelecionada.itens; let i = index" class="border p-4 rounded-lg bg-gray-50">
+
+          <div class="flex flex-col sm:flex-row justify-between mb-3 gap-2">
+            <span class="font-semibold text-gray-700">
+              <span class="text-blue-600 mr-1">#{{ i + 1 }}</span>
+              {{ item.nomeCompetencia || 'Competência' }}
+            </span>
+
+            <select [(ngModel)]="item.notaAutoAvaliacao" class="border rounded-md p-1.5 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+              <option [ngValue]="null">Selecionar Nota...</option>
+              <option [ngValue]="1">1 - Insuficiente</option>
+              <option [ngValue]="2">2 - Precisa Melhorar</option>
+              <option [ngValue]="3">3 - Bom</option>
+              <option [ngValue]="4">4 - Muito Bom</option>
+              <option [ngValue]="5">5 - Excelente</option>
+            </select>
+          </div>
+
+          <textarea [(ngModel)]="item.justificativaColaborador" rows="2"
+            class="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Justifique a sua nota (opcional)..."></textarea>
+        </div>
+      </div>
+
+      <div class="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-lg">
+        <button (click)="fecharModal()" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Cancelar</button>
+        <button (click)="salvarAutoAvaliacao(false)" class="px-4 py-2 text-blue-700 bg-blue-100 rounded hover:bg-blue-200">Guardar Rascunho</button>
+        <button (click)="salvarAutoAvaliacao(true)" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm">Enviar para Gestor</button>
+      </div>
+
+    </div>
+  </div>
+</div>

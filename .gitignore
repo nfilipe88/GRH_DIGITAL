@@ -26,3 +26,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+.fake
+HRManager.Backend/HRManager.WebApi/obj/
+HRManager.Backend/HRManager.WebApi/bin/
+HRManager.Backend/.vs/
+.vscode/
+HRManager.Backend/HRManager.WebAPI/migrations/
