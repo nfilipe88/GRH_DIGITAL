@@ -1,0 +1,93 @@
+<!-- src/app/pages/gestao-roles/gestao-roles.html -->
+<div class="container mx-auto p-8">
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">Gestão de Roles e Permissões</h2>
+      <button
+        (click)="novaRole()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Nova Role
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Lista de Roles -->
+      <div class="lg:col-span-1">
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Roles</h3>
+          <div class="space-y-2">
+            <div
+              *ngFor="let role of roles"
+              (click)="selecionarRole(role)"
+              [class.bg-blue-50]="roleSelecionada?.id === role.id"
+              class="p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50"
+            >
+              <div class="font-medium text-gray-900">{{ role.name }}</div>
+              <div class="text-sm text-gray-500 mt-1">{{ role.description }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalhes da Role e Permissões -->
+      <div class="lg:col-span-2" *ngIf="roleSelecionada">
+        <div class="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 class="text-xl font-bold mb-4">{{ roleSelecionada.name }}</h3>
+          <p class="text-gray-600 mb-6">{{ roleSelecionada.description }}</p>
+
+          <h4 class="text-lg font-semibold mb-4">Permissões</h4>
+
+          <div *ngFor="let modulo of permissoesAgrupadas" class="mb-6">
+            <h5 class="font-medium text-gray-800 mb-3">{{ modulo.module }}</h5>
+            <div class="space-y-2">
+              <div *ngFor="let permissao of modulo.permissoes" class="flex items-center">
+                <input
+                  type="checkbox"
+                  [id]="'perm-' + permissao.id"
+                  [checked]="temPermissao(permissao.id)"
+                  (change)="togglePermissao(permissao.id)"
+                  class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <label [for]="'perm-' + permissao.id" class="ml-2 text-sm text-gray-900">
+                  {{ permissao.name }}
+                </label>
+                <span class="ml-2 text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">
+                  {{ permissao.category }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6">
+            <button
+              (click)="salvarPermissoes()"
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Salvar Alterações
+            </button>
+            <button
+              (click)="roleSelecionada = null"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagem quando nenhuma role está selecionada -->
+      <div class="lg:col-span-2" *ngIf="!roleSelecionada">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <h3 class="mt-4 text-lg font-medium text-gray-900">Nenhuma role selecionada</h3>
+          <p class="mt-2 text-sm text-gray-500">
+            Selecione uma role da lista para ver e editar suas permissões.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

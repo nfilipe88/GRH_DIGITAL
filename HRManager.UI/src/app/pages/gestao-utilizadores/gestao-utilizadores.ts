@@ -2,8 +2,12 @@ import { Component, inject, OnInit } from '@angular/core';
 import { InstituicaoService } from '../../services/instituicao.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService, RegisterRequest, UserListDto } from '../../../core/auth/auth.service';
+import { AuthService} from '../../../core/auth/auth.service';
 import { Instituicao } from '../../interfaces/instituicao';
+import { PagedResult } from '../../interfaces/paged-result';
+import { RegisterRequest } from '../../interfaces/registerRequest';
+import { UserListDto } from '../../interfaces/userListDto';
+import { InstituicaoListDto } from '../../interfaces/instituicaoListDto';
 
 @Component({
   selector: 'app-gestao-utilizadores',
@@ -18,8 +22,14 @@ export class GestaoUtilizadores implements OnInit {
 
   // --- Estado do Formulário ---
   public dadosFormulario: RegisterRequest;
-  public listaInstituicoes: Instituicao[] = [];
+  public listaInstituicoes: InstituicaoListDto[] = [];
   public listaUtilizadores: UserListDto[] = [];
+  // Variáveis de Paginação
+  totalCount = 0;
+  pageSize = 10;
+  currentPage = 1;
+  totalPages = 0;
+  isLoading = false;
 
   // *** 1. ADICIONAR ESTADO DO MODAL ***
   public isModalAberto: boolean = false;
@@ -52,18 +62,28 @@ export class GestaoUtilizadores implements OnInit {
     });
   }
 
-  carregarUtilizadores(): void {
-    this.authService.getUsers().subscribe({
-      next: (data) => {
-        this.listaUtilizadores = data;
+  carregarUtilizadores(page: number = 1): void {
+    this.isLoading = true;
+    this.authService.getAllUsers(page, this.pageSize).subscribe({
+      next: (response: PagedResult<UserListDto>) => {
+        this.listaUtilizadores = response.items; // Agora a lista está dentro de .items
+        this.totalCount = response.totalCount;
+        this.totalPages = response.totalPages;
+        this.currentPage = response.pageNumber;
+        this.isLoading = false;
       },
       error: (err) => {
-        console.error('Erro ao carregar utilizadores:', err);
-        if (err.status === 403) {
-          this.mostrarFeedback('Apenas o Gestor Master pode ver a lista de utilizadores.', true);
-        }
+        console.error('Erro ao carregar utilizadores', err);
+        this.isLoading = false;
       }
     });
+  }
+
+  // Métodos para os botões
+  onPageChange(newPage: number): void {
+    if (newPage >= 1 && newPage <= this.totalPages) {
+      this.carregarUtilizadores(newPage);
+    }
   }
 
   /**

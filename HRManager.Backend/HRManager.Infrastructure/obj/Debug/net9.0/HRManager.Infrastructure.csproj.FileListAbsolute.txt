@@ -1,0 +1,6 @@
+D:\Projects\GRH_DIGITAL\HRManager.Backend\HRManager.Infrastructure\obj\Debug\net9.0\HRManager.Infrastructure.csproj.AssemblyReference.cache
+D:\Projects\GRH_DIGITAL\HRManager.Backend\HRManager.Infrastructure\obj\Debug\net9.0\HRManager.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\GRH_DIGITAL\HRManager.Backend\HRManager.Infrastructure\obj\Debug\net9.0\HRManager.Infrastructure.AssemblyInfoInputs.cache
+D:\Projects\GRH_DIGITAL\HRManager.Backend\HRManager.Infrastructure\obj\Debug\net9.0\HRManager.Infrastructure.AssemblyInfo.cs
+D:\Projects\GRH_DIGITAL\HRManager.Backend\HRManager.Infrastructure\obj\Debug\net9.0\HRManager.Infrastructure.csproj.CoreCompileInputs.cache
+D:\Projects\GRH_DIGITAL\HRManager.Backend\HRManager.Infrastructure\obj\Debug\net9.0\HRManager.Infrastructure.sourcelink.json

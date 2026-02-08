@@ -1,11 +1,10 @@
 <div class="container mx-auto p-8">
 
   @if (feedbackMessage) {
-    <div
-      [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-      class="p-4 rounded mb-4 max-w-4xl mx-auto">
-      {{ feedbackMessage }}
-    </div>
+  <div [ngClass]="isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+    class="p-4 rounded mb-4 max-w-4xl mx-auto">
+    {{ feedbackMessage }}
+  </div>
   }
 
   <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
@@ -13,7 +12,7 @@
       <h2 class="text-xl font-semibold">Utilizadores Registados</h2>
 
       <button (click)="abrirModalNovo()"
-              class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
         Registar Utilizador
       </button>
     </div>
@@ -30,100 +29,114 @@
         <tbody class="bg-white divide-y divide-gray-200">
 
           @for (user of listaUtilizadores; track user.id) {
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.email }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.nomeInstituicao || 'N/A (Master)' }}</td>
-            </tr>
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.email }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.nomeInstituicao || 'N/A (Master)' }}
+            </td>
+          </tr>
           } @empty {
-            <tr>
-              <td colspan="3" class="text-center py-4 text-gray-500">
-                Nenhum utilizador encontrado.
-              </td>
-            </tr>
+          <tr>
+            <td colspan="3" class="text-center py-4 text-gray-500">
+              Nenhum utilizador encontrado.
+            </td>
+          </tr>
           }
         </tbody>
       </table>
+      <div class="pagination-controls d-flex justify-content-between align-items-center mt-3" *ngIf="totalCount > 0">
+
+        <span>
+          A mostrar página <strong>{{ currentPage }}</strong> de <strong>{{ totalPages }}</strong>
+          (Total: {{ totalCount }} registos)
+        </span>
+
+        <div>
+          <button class="btn btn-secondary me-2" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
+            Anterior
+          </button>
+
+          <button class="btn btn-primary" [disabled]="currentPage === totalPages"
+            (click)="onPageChange(currentPage + 1)">
+            Seguinte
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
   @if (isModalAberto) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div (click)="fecharModal()" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div (click)="fecharModal()" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-      <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-2xl mx-4">
+    <div class="bg-white p-6 rounded-lg shadow-xl z-10 w-full max-w-2xl mx-4">
 
-        <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+      <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
 
-          <h2 class="text-xl font-semibold mb-4">Registar Novo Utilizador</h2>
+        <h2 class="text-xl font-semibold mb-4">Registar Novo Utilizador</h2>
 
-          @if (feedbackModal) {
-            <div
-              [ngClass]="isErrorModal ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-              class="p-4 rounded mb-4">
-              {{ feedbackModal }}
-            </div>
+        @if (feedbackModal) {
+        <div [ngClass]="isErrorModal ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+          class="p-4 rounded mb-4">
+          {{ feedbackModal }}
+        </div>
+        }
+
+        <div class="space-y-6">
+
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">Email do Utilizador</label>
+            <input type="email" id="email" name="email" required [(ngModel)]="dadosFormulario.email"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Senha (mín. 6 caracteres)</label>
+            <input type="password" id="password" name="password" required [(ngModel)]="dadosFormulario.password"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <div>
+            <label for="role" class="block text-sm font-medium text-gray-700">Função (Role)</label>
+            <select id="role" name="role" required [(ngModel)]="dadosFormulario.role"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <option value="GestorRH">Gestor de RH Institucional</option>
+              <option value="GestorMaster">Gestor Master (Administrador)</option>
+            </select>
+          </div>
+
+          @if (dadosFormulario.role === 'GestorRH') {
+          <div>
+            <label for="instituicao" class="block text-sm font-medium text-gray-700">Instituição *</label>
+            <select id="instituicao" name="instituicao" required [(ngModel)]="dadosFormulario.instituicaoId"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <option [ngValue]="null" disabled>Selecione uma instituição...</option>
+              @for (inst of listaInstituicoes; track inst.id) {
+              <option [value]="inst.id">{{ inst.nome }}</option>
+              }
+            </select>
+            @if (listaInstituicoes.length === 0) {
+            <p class="text-xs text-red-600 mt-1">Nenhuma instituição ativa encontrada. Crie uma primeiro.</p>
+            }
+          </div>
           }
 
-          <div class="space-y-6">
+        </div>
 
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700">Email do Utilizador</label>
-              <input type="email" id="email" name="email" required
-                     [(ngModel)]="dadosFormulario.email"
-                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
+        <div class="mt-8 flex justify-end gap-3">
+          <button type="button" (click)="fecharModal()"
+            class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button type="submit" [disabled]="!registerForm.form.valid"
+            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+            Registar Utilizador
+          </button>
+        </div>
+      </form>
 
-            <div>
-              <label for="password" class="block text-sm font-medium text-gray-700">Senha (mín. 6 caracteres)</label>
-              <input type="password" id="password" name="password" required
-                     [(ngModel)]="dadosFormulario.password"
-                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
-
-            <div>
-              <label for="role" class="block text-sm font-medium text-gray-700">Função (Role)</label>
-              <select id="role" name="role" required
-                      [(ngModel)]="dadosFormulario.role"
-                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <option value="GestorRH">Gestor de RH Institucional</option>
-                <option value="GestorMaster">Gestor Master (Administrador)</option>
-              </select>
-            </div>
-
-            @if (dadosFormulario.role === 'GestorRH') {
-              <div>
-                <label for="instituicao" class="block text-sm font-medium text-gray-700">Instituição *</label>
-                <select id="instituicao" name="instituicao" required
-                        [(ngModel)]="dadosFormulario.instituicaoId"
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                  <option [ngValue]="null" disabled>Selecione uma instituição...</option>
-                  @for (inst of listaInstituicoes; track inst.id) {
-                    <option [value]="inst.id">{{ inst.nome }}</option>
-                  }
-                </select>
-                @if (listaInstituicoes.length === 0) {
-                  <p class="text-xs text-red-600 mt-1">Nenhuma instituição ativa encontrada. Crie uma primeiro.</p>
-                }
-              </div>
-            }
-
-          </div>
-
-          <div class="mt-8 flex justify-end gap-3">
-            <button type="button" (click)="fecharModal()"
-                    class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              Cancelar
-            </button>
-            <button type="submit" [disabled]="!registerForm.form.valid"
-                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
-              Registar Utilizador
-            </button>
-          </div>
-        </form>
-
-      </div>
     </div>
+  </div>
   }
 
 </div>

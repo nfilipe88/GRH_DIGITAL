@@ -9,6 +9,7 @@ import { Colaborador } from '../../interfaces/colaborador';
 import { Instituicao } from '../../interfaces/instituicao';
 import { CargoDto } from '../../interfaces/cargoDto';
 import { ColaboradorListDto } from '../../interfaces/colaboradorListDto';
+import { InstituicaoListDto } from '../../interfaces/instituicaoListDto';
 
 @Component({
   selector: 'app-gestao-colaboradores',
@@ -27,17 +28,18 @@ export class GestaoColaboradores implements OnInit {
 
   // Variáveis de Estado
   public colaboradorForm: FormGroup; // O nosso novo formulário Reativo
-  public listaInstituicoes: Instituicao[] = [];
-  public listaColaboradores: Colaborador[] = [];
+  public listaInstituicoes: InstituicaoListDto[] = [];
+  public listaColaboradores: ColaboradorListDto[] = [];
+  public listaColaboradoresPorInstituicao: ColaboradorListDto[] = [];
 
   public isModalAberto: boolean = false;
   public idColaboradorEmEdicao: string = '';
-  public loggedInUserRole: string | null = null;
+  public loggedInUserRole: string[] = [];
   public nomeInstituicaoGestor: string = '';
 
   // Estado
   isMaster = signal<boolean>(false);
-  instituicoes = signal<Instituicao[]>([]);
+  instituicoes = signal<InstituicaoListDto[]>([]);
   cargos = signal<CargoDto[]>([]); // Lista completa de cargos
   nomeInstituicaoRH = signal<string>('');
 
@@ -47,6 +49,7 @@ export class GestaoColaboradores implements OnInit {
 
   // 1. Definir o signal 'colaboradores' que faltava
   colaboradores = signal<ColaboradorListDto[]>([]);
+  colaboradoresParaExibir = signal<ColaboradorListDto[]>([]);
   // Estado para o Modal de Transferência
   mostrarModalTransferencia = signal(false);
   gestorParaDesativarId: string | null = null;
@@ -57,7 +60,7 @@ export class GestaoColaboradores implements OnInit {
   public isError: boolean = false;
 
   constructor() {
-    this.loggedInUserRole = this.authService.getUserRole();
+    this.loggedInUserRole = this.authService.getUserRoles();
 
     // Inicializar o formulário com as validações
     this.colaboradorForm = this.fb.group({
@@ -86,22 +89,14 @@ export class GestaoColaboradores implements OnInit {
   ngOnInit(): void {
     this.configurarPermissoes();
     this.verificarPerfil();
-    this.carregarColaboradores();
     this.carregarCargos();
+    this.carregarColaboradores();
+    this.carregarInstituicoes();
   }
 
   configurarPermissoes(): void {
-    if (this.loggedInUserRole === 'GestorMaster') {
+    if (this.loggedInUserRole.includes('GestorMaster')) {
       this.carregarInstituicoes();
-    } else if (this.loggedInUserRole === 'GestorRH') {
-      // Pré-preencher a instituição e bloquear o campo se necessário
-      const instId = this.authService.getInstituicaoId();
-      const instNome = this.authService.getInstituicaoNome();
-
-      if (instId) {
-        this.colaboradorForm.patchValue({ instituicaoId: instId });
-        this.nomeInstituicaoGestor = instNome || '';
-      }
     }
   }
 
@@ -146,33 +141,49 @@ export class GestaoColaboradores implements OnInit {
   }
 
   carregarColaboradores(): void {
-    this.colaboradorService.getColaboradores().subscribe({
-      next: (data) => this.listaColaboradores = data,
-      error: (err) => console.error(err)
-    });
+    if (this.isMaster()) {
+      // GestorMaster vê todos os colaboradores
+      this.colaboradorService.getColaboradores().subscribe({
+        next: (data) => this.listaColaboradores = data,
+        error: (err) => console.error('Erro ao carregar colaboradores:', err)
+      });
+    } else {
+      // GestorRH vê apenas os colaboradores da sua instituição
+      const instituicaoId = this.authService.getInstituicaoId();
+      if (instituicaoId) {
+        this.colaboradorService.getColaboradoresPorInstituicao(instituicaoId).subscribe({
+          next: (data) => {
+            this.listaColaboradores = data;
+            // Para cada colaborador, adiciona o nome da instituição localmente
+            // já que a API não retorna para o endpoint por instituição
+            this.listaColaboradores.forEach(col => {
+              col.nomeInstituicao = this.nomeInstituicaoRH();
+            });
+          },
+          error: (err) => console.error('Erro ao carregar colaboradores por instituição:', err)
+        });
+      }
+    }
   }
 
   verificarPerfil() {
-  // Atualiza o estado de Master
-  const role = this.authService.getUserRole();
-  this.isMaster.set(role === 'GestorMaster'); // Garante que lê a role corretamente
+    const role = this.authService.getUserRoles();
+    this.isMaster.set(role.includes('GestorMaster'));
 
-  if (this.isMaster()) {
-    this.carregarInstituicoes();
-    this.colaboradorForm.get('instituicaoId')?.enable();
-  }
-  else {
-    // CENÁRIO 2: É RH
-    const myInstId = this.authService.getInstituicaoId();
-    // NOTA: Se o nome vier vazio, usamos um fallback para não ficar em branco
-    const myInstName = this.authService.getInstituicaoNome() || 'A Minha Instituição';
+    if (this.isMaster()) {
+      this.carregarInstituicoes();
+      this.colaboradorForm.get('instituicaoId')?.enable();
+    } else {
+      // Para GestorRH, pré-preenche a instituição
+      const myInstId = this.authService.getInstituicaoId();
+      const myInstName = this.authService.getInstituicaoNome() || 'A Minha Instituição';
 
-    if (myInstId) {
-      this.colaboradorForm.patchValue({ instituicaoId: myInstId });
-      this.nomeInstituicaoRH.set(myInstName);
+      if (myInstId) {
+        this.colaboradorForm.patchValue({ instituicaoId: myInstId });
+        this.nomeInstituicaoRH.set(myInstName);
+      }
     }
   }
-}
 
   // --- AÇÕES DO FORMULÁRIO ---
 
@@ -187,7 +198,7 @@ export class GestaoColaboradores implements OnInit {
     });
 
     // Se for GestorRH, volta a forçar o ID da instituição
-    if (this.loggedInUserRole === 'GestorRH') {
+    if (this.loggedInUserRole.includes('GestorRH')) {
       const instId = this.authService.getInstituicaoId();
       if (instId) this.colaboradorForm.patchValue({ instituicaoId: instId });
     }
@@ -195,7 +206,7 @@ export class GestaoColaboradores implements OnInit {
     this.isModalAberto = true;
   }
 
-  selecionarParaEditar(colaborador: Colaborador): void {
+  selecionarParaEditar(colaborador: ColaboradorListDto): void {
     this.limparFeedback();
     this.idColaboradorEmEdicao = colaborador.id;
 
@@ -226,11 +237,11 @@ export class GestaoColaboradores implements OnInit {
     });
   }
 
+  // Atualize o método onSubmit para recarregar os colaboradores após criação/edição
   onSubmit(): void {
     this.limparFeedback();
 
     if (this.colaboradorForm.invalid) {
-      // Marca todos os campos como "tocados" para mostrar os erros no HTML
       this.colaboradorForm.markAllAsTouched();
       this.mostrarFeedback('Por favor, corrija os erros no formulário.', true);
       return;
@@ -239,7 +250,7 @@ export class GestaoColaboradores implements OnInit {
     const request = this.colaboradorForm.value;
 
     // Garantia extra para GestorRH
-    if (this.loggedInUserRole === 'GestorRH') {
+    if (!this.isMaster()) {
       request.instituicaoId = this.authService.getInstituicaoId();
     }
 
@@ -247,7 +258,7 @@ export class GestaoColaboradores implements OnInit {
       this.colaboradorService.atualizarColaborador(this.idColaboradorEmEdicao, request).subscribe({
         next: (res) => {
           this.mostrarFeedback('Atualizado com sucesso!', false);
-          this.carregarColaboradores();
+          this.carregarColaboradores(); // Recarrega a lista atualizada
           this.fecharModal();
         },
         error: (err) => this.tratarErro(err)
@@ -256,26 +267,23 @@ export class GestaoColaboradores implements OnInit {
       this.colaboradorService.criarColaborador(request).subscribe({
         next: (res) => {
           this.toastr.success('Colaborador e conta de utilizador criados com sucesso!');
-          this.carregarColaboradores();
+          this.carregarColaboradores(); // Recarrega a lista atualizada
           this.fecharModal();
         },
         error: (err) => {
-        // Agora o erro pode vir do Identity (ex: Password fraca ou Email duplicado)
-        this.toastr.error('Erro ao criar: ' + err.error?.message || 'Erro desconhecido');
-      }
+          this.toastr.error('Erro ao criar: ' + err.error?.message || 'Erro desconhecido');
+        }
       });
     }
   }
-
   // --- AÇÕES DE LISTAGEM ---
-
-  selecionarParaDeletar(colaborador: Colaborador): void {
+  selecionarParaDeletar(colaborador: ColaboradorListDto): void {
     if (!confirm(`Eliminar "${colaborador.nomeCompleto}"?`)) return;
 
     this.colaboradorService.deletarColaborador(colaborador.id).subscribe({
       next: () => {
         this.mostrarFeedback('Colaborador eliminado.', false);
-        this.carregarColaboradores();
+        this.carregarColaboradores(); // Recarrega a lista atualizada
       },
       error: (err) => this.tratarErro(err)
     });
@@ -294,7 +302,7 @@ export class GestaoColaboradores implements OnInit {
         alert('Colaborador desativado com sucesso.');
         this.carregarColaboradores();
       },
-      error: (err : any) => {
+      error: (err: any) => {
         // Lógica Inteligente: Deteta o erro específico do Backend
         if (err.error?.message === 'HAS_SUBORDINATES' || err.message.includes('HAS_SUBORDINATES')) {
 
@@ -337,14 +345,15 @@ export class GestaoColaboradores implements OnInit {
       });
   }
 
-  mudarEstado(colaborador: Colaborador): void {
+  // Atualize também os outros métodos que recarregam colaboradores
+  mudarEstado(colaborador: ColaboradorListDto): void {
     const acao = colaborador.isAtivo ? "desativar" : "reativar";
-    if (!confirm(`${acao} "${colaborador.nomeCompleto}"?`)) return; // Mensagem corrigida
+    if (!confirm(`${acao} "${colaborador.nomeCompleto}"?`)) return;
 
     this.colaboradorService.atualizarEstadoColaborador(colaborador.id, !colaborador.isAtivo).subscribe({
       next: () => {
         this.mostrarFeedback(`Sucesso ao ${acao}.`, false);
-        this.carregarColaboradores();
+        this.carregarColaboradores(); // Recarrega a lista atualizada
       },
       error: (err) => this.tratarErro(err)
     });

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { CriarInstituicaoRequest } from '../interfaces/criarInstituicaoRequest';
 import { Instituicao } from '../interfaces/instituicao';
 import { environment } from '../../environments/environment';
+import { InstituicaoListDto } from '../interfaces/instituicaoListDto';
 
 @Injectable({
   providedIn: 'root',
@@ -20,8 +21,16 @@ export class InstituicaoService {
    * Busca a lista de todas as instituições da API
    * Corresponde ao nosso método GET
    */
-  public getInstituicoes(): Observable<Instituicao[]> {
-    return this.http.get<Instituicao[]>(this.apiUrl);
+  public getInstituicoes(): Observable<InstituicaoListDto[]> {
+    return this.http.get<InstituicaoListDto[]>(this.apiUrl);
+  }
+
+  public getInstituicaoPorId(id: string): Observable<Instituicao> {
+    return this.http.get<Instituicao>(`${this.apiUrl}/${id}`);
+  }
+
+  public getInstituicaoPorIdentificadorUnico(identificadorUnico: string): Observable<Instituicao> {
+    return this.http.get<Instituicao>(`${this.apiUrl}/identificador/${identificadorUnico}`);
   }
 
   /**

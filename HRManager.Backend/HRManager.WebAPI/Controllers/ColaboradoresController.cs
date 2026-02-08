@@ -20,21 +20,22 @@ namespace HRManager.WebAPI.Controllers
             _colaboradorService = colaboradorService;
         }
 
-        // APENAS ESTE MÉTODO GET
+        
         [HttpGet]
-        public async Task<IActionResult> GetColaboradores([FromQuery] Guid? instituicaoId = null)
+        [Authorize(Roles = RolesConstants.GestorMaster)]
+        public async Task<IActionResult> GetColaboradores()
         {
             var lista = await _colaboradorService.GetAllAsync();
             return Ok(lista);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CriarColaborador([FromBody] CriarColaboradorRequest request)
+        [HttpGet("instituicao/{instituicaoId:guid}")]
+        public async Task<IActionResult> GetColaboradoresPorInstituicao(Guid instituicaoId)
         {
-            var novoColaborador = await _colaboradorService.CreateAsync(request);
-            return CreatedAtAction(nameof(GetColaboradorPorId), new { id = novoColaborador.Id }, novoColaborador);
+            var lista = await _colaboradorService.GetAllByInstituicaoAsync(instituicaoId);
+            return Ok(lista);
         }
-
+        
         // --- NOVO ENDPOINT (Colocar aqui para evitar conflito de rotas) ---
         [HttpGet("cargos")]
         public async Task<IActionResult> GetCargos()
@@ -49,6 +50,13 @@ namespace HRManager.WebAPI.Controllers
         {
             var colaborador = await _colaboradorService.GetByIdAsync(id);
             return Ok(colaborador);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CriarColaborador([FromBody] CriarColaboradorRequest request)
+        {
+            var novoColaborador = await _colaboradorService.CreateAsync(request);
+            return CreatedAtAction(nameof(GetColaboradorPorId), new { id = novoColaborador.Id }, novoColaborador);
         }
 
         [HttpPut("{id}")]

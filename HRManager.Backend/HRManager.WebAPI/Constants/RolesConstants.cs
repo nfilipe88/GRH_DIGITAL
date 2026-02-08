@@ -3,6 +3,7 @@
     public static class RolesConstants
     {
         // Roles Individuais
+        public const string Admin = "Admin";
         public const string GestorMaster = "GestorMaster";
         public const string GestorRH = "GestorRH";
         public const string Colaborador = "Colaborador";

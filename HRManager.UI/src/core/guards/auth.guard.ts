@@ -1,21 +1,29 @@
-// src/core/guards/auth.guard.ts
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-// Ajuste o caminho para o seu AuthService.
-// Vi que tem um em 'src/core/auth/auth.service.ts' e outro em 'src/app/services/auth.service.ts'
-// Use o que for o principal (provavelmente o de 'core').
-import { AuthService } from '../auth/auth.service';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../auth/auth.service'; // Ajusta o caminho se necessário
 
-export const authGuard = () => {
+export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Assumindo que o seu AuthService tem um método para verificar o login
-  // (ex: verificar se existe um token)
-  if (authService.isLoggedIn()) {
-    return true; // Permite o acesso
+  // 1. Verificar se tem Token (Login básico)
+  if (!authService.isLoggedIn()) {
+    router.navigate(['/login']);
+    return false;
   }
 
-  // Se não estiver logado, redireciona para a página de login
-  return router.parseUrl('/login');
+  // 2. Verificar Roles (se a rota exigir)
+  const requiredRoles = route.data['roles'] as Array<string>;
+
+  if (requiredRoles && requiredRoles.length > 0) {
+    // Se a rota pede roles (ex: ['Admin']), verifica se o user tem
+    if (!authService.hasRole(requiredRoles)) {
+      // User logado, mas sem permissão -> Redireciona para Dashboard ou página de "Proibido"
+      alert('Acesso negado: Não tens permissão para aceder a esta página.');
+      router.navigate(['/dashboard']);
+      return false;
+    }
+  }
+
+  return true;
 };

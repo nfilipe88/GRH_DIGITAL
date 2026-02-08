@@ -7,6 +7,7 @@ import { authInterceptor } from '../core/interceptors/auth.interceptor';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'; // <--- Importante para animações
 import { errorInterceptor } from '../core/interceptors/error.interceptor';
 import { provideToastr } from 'ngx-toastr';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,7 +18,7 @@ export const appConfig: ApplicationConfig = {
 
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])), // Permite fazer pedidos HTTP (GET, POST, etc.)
     provideAnimationsAsync(), // <--- Adicione isto para os gráficos animarem
-    // provideFormsModule()   // Permite usar ngModel e (ngSubmit) em formulários
+    provideCharts(withDefaultRegisterables()), // <--- Adicione isto para usar gráficos
     provideToastr({
       timeOut: 3000,
       positionClass: 'toast-top-right',

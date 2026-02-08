@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { InstituicaoService } from '../../services/instituicao.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CriarInstituicaoRequest } from '../../interfaces/criarInstituicaoRequest';
 import { Instituicao } from '../../interfaces/instituicao';
+import { InstituicaoListDto } from '../../interfaces/instituicaoListDto';
 
 
 @Component({
@@ -13,11 +13,10 @@ import { Instituicao } from '../../interfaces/instituicao';
   styleUrl: './gestao-instituicoes.css',
 })
 export class GestaoInstituicoes implements OnInit {
-  public listaInstituicoes: Instituicao[] = [];
+  public listaInstituicoes: InstituicaoListDto[] = [];
   // Propriedade para fazer o "data binding" com o formulário
   // Corresponde aos campos do nosso DTO
   public dadosFormulario = {
-    // id: null,
     nome: '',
     identificadorUnico: '',
     nif: '',
@@ -34,6 +33,7 @@ export class GestaoInstituicoes implements OnInit {
   public feedbackMessage: string | null = null;
   public isError: boolean = false;
   public isModalAberto: boolean = false;
+  isLoadingDetalhes!: boolean;
 
   // Injetar o nosso serviço para o podermos usar
   constructor(private instituicaoService: InstituicaoService) { }
@@ -119,24 +119,34 @@ export class GestaoInstituicoes implements OnInit {
   /**
    * Prepara o formulário para edição.
    */
-  public selecionarParaEditar(instituicao: Instituicao): void {
+  public selecionarParaEditar(instituicao: InstituicaoListDto): void {
     this.idInstituicaoEmEdicao = instituicao.id;
-    this.dadosFormulario = {
-      nome: instituicao.nome,
-      identificadorUnico: instituicao.identificadorUnico,
-      nif: instituicao.nif,
-      endereco: instituicao.endereco,
-      telemovel: instituicao.telemovel ? Number(instituicao.telemovel) : null,
-      emailContato: instituicao.emailContato
-    };
-    this.isModalAberto = true;
-    this.limparFeedback();
+    this.isLoadingDetalhes = true;
+    this.instituicaoService.getInstituicaoPorId(instituicao.id).subscribe({
+      next: full => {
+        this.dadosFormulario = {
+          nome: full.nome,
+          identificadorUnico: full.identificadorUnico,
+          nif: full.nif,
+          endereco: full.endereco,
+          telemovel: full.telemovel ? Number(full.telemovel) : null,
+          emailContato: full.emailContato
+        };
+        this.isModalAberto = true;
+        this.limparFeedback();
+      },
+      error: () => {
+        // handle error (toast/log)
+        this.mostrarFeedback('Erro ao carregar detalhes da instituição para edição.', true);
+      },
+      complete: () => this.isLoadingDetalhes = false
+    });
   }
 
   /**
    * NOVO MÉTODO: Chamado para Ativar ou Inativar.
    */
-  public mudarEstado(instituicao: Instituicao): void {
+  public mudarEstado(instituicao: InstituicaoListDto): void {
     // Pergunta de confirmação
     const acao = instituicao.isAtiva ? "inativa" : "reativa";
     if (!confirm(`Tem a certeza que deseja ${acao} a instituição "${instituicao.nome}"?`)) {

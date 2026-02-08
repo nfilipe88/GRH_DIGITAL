@@ -1,6 +1,8 @@
 interface MenuItem {
+  path: string;
   label: string;
-  icon: string;
-  route: string;
-  roles: string[]; // Define quem pode ver este item ('*' = todos)
+  icon?: string;
+  requiredPermissions: string[];
+  requiredRoles?: string[];
+  children?: MenuItem[];
 }

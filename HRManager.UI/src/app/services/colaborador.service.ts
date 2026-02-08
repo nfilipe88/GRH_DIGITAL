@@ -7,6 +7,7 @@ import { CriarColaboradorRequest } from '../interfaces/criarColaboradorRequest';
 import { environment } from '../../environments/environment';
 import { UserDetailsDto } from '../interfaces/userDetailsDto';
 import { CargoDto } from '../interfaces/cargoDto';
+import { ColaboradorListDto } from '../interfaces/colaboradorListDto';
 
 @Injectable({
   providedIn: 'root'
@@ -17,20 +18,22 @@ export class ColaboradorService {
   constructor(private http: HttpClient) { }
 
   /**
-   * Busca a lista de todos os colaboradores
+   * Busca a lista de todos os colaboradores, acesso reservado ao Gestor Master
+   * Corresponde ao nosso método GET
    */
-  public getColaboradores(): Observable<Colaborador[]> {
-    return this.http.get<Colaborador[]>(this.apiUrl);
+  public getColaboradores(): Observable<ColaboradorListDto[]> {
+    return this.http.get<ColaboradorListDto[]>(this.apiUrl);
   }
 
   /**
-   * Envia um novo colaborador para a API
-   * Corresponde ao nosso método POST
+   * Busca a lista de colaboradores por instituição, acesso reservado ao RH e Gestor Master
+   * @param instituicaoId
+   * @returns
    */
-  public criarColaborador(colaborador: CriarColaboradorRequest): Observable<any> {
-    return this.http.post<any>(this.apiUrl, colaborador);
+  public getColaboradoresPorInstituicao(instituicaoId: string): Observable<ColaboradorListDto[]> {
+    return this.http.get<ColaboradorListDto[]>(`${this.apiUrl}/instituicao/${instituicaoId}`);
   }
-  
+
   // Adiciona este método
   getCargos(): Observable<CargoDto[]> {
     return this.http.get<CargoDto[]>(`${this.apiUrl}/cargos`); // Ajusta a URL se for diferente
@@ -41,6 +44,14 @@ export class ColaboradorService {
   // ---
   public getColaboradorById(id: string): Observable<ColaboradorDetails> {
     return this.http.get<ColaboradorDetails>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Envia um novo colaborador para a API
+   * Corresponde ao nosso método POST
+   */
+  public criarColaborador(colaborador: CriarColaboradorRequest): Observable<any> {
+    return this.http.post<any>(this.apiUrl, colaborador);
   }
 
   // ---

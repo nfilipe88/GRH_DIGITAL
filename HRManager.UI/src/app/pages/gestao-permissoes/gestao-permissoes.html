@@ -1,0 +1,149 @@
+<!-- src/app/pages/gestao-permissoes/gestao-permissoes.html -->
+<div class="container mx-auto p-8">
+  <div class="bg-white p-6 rounded-lg shadow-md">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">Gestão de Permissões</h2>
+      <div class="flex items-center space-x-2">
+        <span class="text-sm text-gray-600">
+          Total: {{ totalPermissions }} | Ativas: {{ activePermissions }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Pesquisar</label>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="applyFilters()"
+            placeholder="Código, nome ou descrição..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
+          <select
+            [(ngModel)]="selectedModule"
+            (change)="applyFilters()"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Todos</option>
+            <option *ngFor="let module of modules" [value]="module">{{ module }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+          <select
+            [(ngModel)]="selectedCategory"
+            (change)="applyFilters()"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Todas</option>
+            <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button
+            (click)="clearFilters()"
+            class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          >
+            Limpar Filtros
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Permissões -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Módulo</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let permission of filteredPermissions"
+              [class.bg-blue-50]="selectedPermission?.id === permission.id"
+              (click)="selectPermission(permission)"
+              class="cursor-pointer hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{{ permission.code }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <div class="font-medium">{{ permission.name }}</div>
+              <div *ngIf="permission.description" class="text-xs text-gray-500 mt-1">{{ permission.description }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ permission.module }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ permission.category }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span
+                [ngClass]="permission.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+              >
+                {{ permission.isActive ? 'Ativa' : 'Inativa' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                (click)="togglePermissionStatus(permission); $event.stopPropagation()"
+                [ngClass]="permission.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'"
+                class="mr-3"
+              >
+                {{ permission.isActive ? 'Desativar' : 'Ativar' }}
+              </button>
+              <button class="text-blue-600 hover:text-blue-900">Editar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredPermissions.length === 0" class="text-center py-8 text-gray-500">
+        Nenhuma permissão encontrada com os filtros atuais.
+      </div>
+    </div>
+
+    <!-- Detalhes da Permissão Selecionada -->
+    <div *ngIf="selectedPermission" class="mt-8 bg-gray-50 p-6 rounded-lg border border-gray-200">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Detalhes da Permissão</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Código</label>
+          <p class="mt-1 text-sm text-gray-900 font-mono">{{ selectedPermission.code }}</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Nome</label>
+          <p class="mt-1 text-sm text-gray-900">{{ selectedPermission.name }}</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Módulo</label>
+          <p class="mt-1 text-sm text-gray-900">{{ selectedPermission.module }}</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Categoria</label>
+          <p class="mt-1 text-sm text-gray-900">{{ selectedPermission.category }}</p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-600">Descrição</label>
+          <p class="mt-1 text-sm text-gray-900">{{ selectedPermission.description || 'Nenhuma descrição fornecida.' }}</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Estado</label>
+          <p class="mt-1">
+            <span
+              [ngClass]="selectedPermission.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+            >
+              {{ selectedPermission.isActive ? 'Ativa' : 'Inativa' }}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
