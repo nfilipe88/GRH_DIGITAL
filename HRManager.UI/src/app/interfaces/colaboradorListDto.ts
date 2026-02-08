@@ -1,10 +1,9 @@
 export interface ColaboradorListDto {
   id: string;
   nomeCompleto: string;
-  emailPessoal: string;
+  email: string;
   nif: string;
   cargo: string | null;
-  departamento: string;
-  nomeInstituicao: string;
+  nomeInstituicao?: string; // Torna opcional se não sempre estiver presente
   isAtivo: boolean;
 }

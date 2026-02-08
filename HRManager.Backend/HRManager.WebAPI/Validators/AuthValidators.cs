@@ -20,7 +20,7 @@ namespace HRManager.WebAPI.Validators
     {
         public RegisterValidator()
         {
-            //RuleFor(x => x.Nome).NotEmpty().WithMessage("O nome é obrigatório.");
+            //RuleFor(x => x.NomeCompleto).NotEmpty().WithMessage("O nome é obrigatório.");
 
             RuleFor(x => x.Email)
                 .NotEmpty().EmailAddress().WithMessage("Email inválido.");

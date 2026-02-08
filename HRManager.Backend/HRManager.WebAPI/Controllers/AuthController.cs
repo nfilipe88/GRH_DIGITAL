@@ -69,8 +69,8 @@ namespace HRManager.WebAPI.Controllers
         {
             try
             {
-                var token = await _authService.LoginAsync(request);
-                return Ok(new { token });
+                var response = await _authService.LoginAsync(request);
+                return Ok(response);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -82,16 +82,78 @@ namespace HRManager.WebAPI.Controllers
             }
         }
 
-        // --- MÉTODO: Listar Utilizadores ---
-        [HttpGet("users")]
-        [Authorize(Roles = "GestorMaster, GestorRH")] // <-- PROTEGIDO!
-        public async Task<IActionResult> GetUsers()
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            var users = await _authService.GetAllUsersAsync();
-            return Ok(users);
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                return Ok(new { message = "Password alterada com sucesso! Por favor, faça login novamente." });
+            }
+            catch (KeyNotFoundException)
+            {
+                // Por segurança, não revelamos se o email existe ou não, ou retornamos BadRequest genérico
+                return BadRequest(new { message = "Dados inválidos." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Ocorreu um erro interno."+ ex.Message });
+            }
         }
 
+        // --- MÉTODO: Listar Utilizadores Paginado ---
+        [HttpGet("users")]
+        [Authorize(Roles = "GestorMaster, GestorRH")]
+        public async Task<IActionResult> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            // Validação básica para evitar erros
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100; // Proteção contra pedidos gigantes
 
+            var pagedResult = await _authService.GetAllUsersAsync(page, pageSize);
+            return Ok(pagedResult);
+        }
+
+        [HttpGet("permissions")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUserPermissions()
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+
+                // Buscar o usuário com suas roles
+                var user = await _context.Users
+                    .Include(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                        .ThenInclude(rp => rp.Permission)
+                    .FirstOrDefaultAsync(u => u.Id == Guid.Parse(userId));
+
+                if (user == null)
+                    return NotFound(new { message = "Utilizador não encontrado" });
+
+                // Extrair códigos de permissão únicos
+                var permissionCodes = user.UserRoles
+                    .SelectMany(ur => ur.Role.RolePermissions)
+                    .Select(rp => rp.Permission.Code)
+                    .Distinct()
+                    .ToList();
+
+                return Ok(permissionCodes);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erro ao obter permissões", error = ex.Message });
+            }
+        }
         // --- Métodos Auxiliares de Criptografia ---
 
     }

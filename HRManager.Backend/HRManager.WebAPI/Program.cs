@@ -3,10 +3,13 @@ using FluentValidation.AspNetCore;
 using HRManager.Application.Interfaces;
 using HRManager.WebAPI.Data;
 using HRManager.WebAPI.Domain.Interfaces;
+using HRManager.WebAPI.Infrastructure;
+using HRManager.WebAPI.Infrastructure.Caching;
 using HRManager.WebAPI.Middlewares;
 using HRManager.WebAPI.Models;
 using HRManager.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -112,6 +115,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Configurar Redis (se disponível) ou usar cache em memória distribuído
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "HRManager:";
+});
+
+// Use cache em memória para desenvolvimento
+//builder.Services.AddDistributedMemoryCache();
+
 // Adicionar o TenantService como Scoped (para cada pedido)
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -124,43 +137,66 @@ builder.Services.AddScoped<IInstituicaoService, InstituicaoService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IAvaliacaoService, AvaliacaoService>();
 builder.Services.AddScoped<IDeclaracaoService, DeclaracaoService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IDistributedCacheService, DistributedCacheService>();
+builder.Services.AddScoped<IPermissionCacheService, PermissionCacheService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IRoleImportExportService, RoleImportExportService>();
+builder.Services.AddScoped<IRoleTemplateService, RoleTemplateService>();
+builder.Services.AddScoped<IPermissionValidationService, PermissionValidationService>();
+builder.Services.AddScoped<IPermissionCacheService, PermissionCacheService>();
 builder.Services.AddFluentValidationAutoValidation();
 //builder.Services.AddValidatorsFromAssemblyContaining<CriarColaboradorValidator>(); // Regista todos os validadores
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // Regista todos os validadores automaticamente
 
+// Registrar serviços
+
+// Configurar autorização dinâmica
+builder.Services.AddAuthorization(options =>
+{
+    // Política genérica baseada em permissões
+    options.AddPolicy("PermissionPolicy", policy =>
+        policy.Requirements.Add(new PermissionRequirement("")));
+});
+
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+// Configurar HTTP context
+builder.Services.AddHttpContextAccessor();
+
 var app = builder.Build();
 
-// --- BLOCO DE SEED OBRIGATÓRIO ---
+// Seed inicial
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    try
-    {
-        // 1. Obter os serviços necessários
-        var context = services.GetRequiredService<HRManagerDbContext>();
-        var userManager = services.GetRequiredService<UserManager<User>>();
-        var roleManager = services.GetRequiredService<RoleManager<Role>>();
-
-        // 2. Aplicar migrações pendentes automaticamente
-        context.Database.Migrate();
-
-        // 3. Executar o Seed (agora com await)
-        await DbSeeder.Seed(context, userManager, roleManager);
-        Console.WriteLine("✅ Seed da Base de Dados executado com sucesso!");
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocorreu um erro ao popular a base de dados (Seeding).");
-        Console.WriteLine($"❌ Erro ao executar o Seed: {ex.Message}");
-    }
+    var context = scope.ServiceProvider.GetRequiredService<HRManagerDbContext>();
+    await PermissionsSeeder.SeedAsync(context);
 }
-
-//app.Use(async (context, next) =>
+// --- BLOCO DE SEED OBRIGATÓRIO ---
+//using (var scope = app.Services.CreateScope())
 //{
-//    Console.WriteLine($"Request: {context.Request.Path}");
-//    await next();
-//});
+//    var services = scope.ServiceProvider;
+//    try
+//    {
+//        // 1. Obter os serviços necessários
+//        var context = services.GetRequiredService<HRManagerDbContext>();
+//        var userManager = services.GetRequiredService<UserManager<User>>();
+//        var roleManager = services.GetRequiredService<RoleManager<Role>>();
+
+//        // 2. Aplicar migrações pendentes automaticamente
+//        context.Database.Migrate();
+
+//        // 3. Executar o Seed (agora com await)
+//        await DbSeeder.Seed(app);
+//        Console.WriteLine("✅ Seed da Base de Dados executado com sucesso!");
+//    }
+//    catch (Exception ex)
+//    {
+//        var logger = services.GetRequiredService<ILogger<Program>>();
+//        logger.LogError(ex, "Ocorreu um erro ao popular a base de dados (Seeding).");
+//        Console.WriteLine($"❌ Erro ao executar o Seed: {ex.Message}");
+//    }
+//}
+// --- FIM DO BLOCO DE SEED ---
 app.Use(async (context, next) =>
 {
     Console.WriteLine($"Request: {context.Request.Path}");

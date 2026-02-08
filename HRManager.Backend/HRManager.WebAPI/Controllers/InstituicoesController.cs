@@ -8,7 +8,7 @@ namespace HRManager.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RolesConstants.GeneralAccess)] // Segurança Crítica: Apenas o "Dono" do SaaS deve mexer aqui
+    [Authorize]
     public class InstituicoesController : ControllerBase
     {
         private readonly IInstituicaoService _instituicaoService;
@@ -19,6 +19,7 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpGet]
+        //[Authorize(RolesConstants.GestorMaster)]
         public async Task<IActionResult> GetInstituicoes()
         {
             var lista = await _instituicaoService.GetAllAsync();
@@ -26,6 +27,7 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpGet("{id}")]
+        // [Authorize(RolesConstants.GestorMaster)]
         public async Task<IActionResult> GetInstituicaoById(Guid id)
         {
             var instituicao = await _instituicaoService.GetByIdAsync(id);
@@ -33,6 +35,7 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpPost]
+        // [Authorize(RolesConstants.GestorMaster)]
         public async Task<IActionResult> CriarInstituicao([FromBody] CriarInstituicaoRequest request)
         {
             var novaInstituicao = await _instituicaoService.CreateAsync(request);
@@ -40,6 +43,7 @@ namespace HRManager.WebAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        // [Authorize(RolesConstants.GestorMaster)]
         public async Task<IActionResult> AtualizarInstituicao(Guid id, [FromBody] AtualizarInstituicaoRequest request)
         {
             var atualizada = await _instituicaoService.UpdateAsync(id, request);

@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterModule } from '@angular/router';
-import { filter } from 'rxjs';
+import { Router, RouterLink, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { MenuPermissionService } from '../../services/menu-permission.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -14,29 +14,39 @@ export class Sidebar {
   @Input() isSidebarOpen: boolean = true;
   private authService = inject(AuthService);
   private router = inject(Router);
+  private menuPermissionService = inject(MenuPermissionService);
 
-  userRole: string | null = null;
+  userRole: string[] = [];
+  menuItems: MenuItem[] = [];
 
-  ngOnInit() {
-    this.userRole = this.authService.getUserRole() || '';
+  ngOnInit(): void {
+    this.menuItems = this.menuPermissionService.getMainMenu();
   }
 
   // --- Helpers de Permissão ---
-
   // Apenas para o Dono do Sistema (Vê Instituições e Utilizadores de Sistema)
+  get isAdmin(): boolean {
+    return this.userRole.includes('GestorMaster') || this.userRole.includes('GestorRH') || this.userRole.includes('Admin');
+  }
+
   get isMaster(): boolean {
-    return this.userRole === 'GestorMaster';
+    return this.userRole.includes('GestorMaster') || this.userRole.includes('GestorRH') || this.userRole.includes('Colaborador');
   }
 
   // Para quem gere RH (Master ou Gestor de RH da empresa)
   // Vê Colaboradores, Configurações de Avaliação, Aprovações
   get isGestor(): boolean {
-    return this.userRole === 'GestorMaster' || this.userRole === 'GestorRH';
+    return this.userRole.includes('GestorMaster') || this.userRole.includes('GestorRH');
   }
 
   // Todos veem (não precisa de getter, é o padrão), mas se quiseres isolar Colaboradores:
   get isColaborador(): boolean {
-    return !!this.userRole; // Qualquer utilizador logado
+    const userRoles = this.authService.getUserRoles();
+    return userRoles.includes('Colaborador') || this.isGestor;
+  }
+
+  hasChildren(item: MenuItem): boolean {
+    return !!(item.children && item.children.length > 0);
   }
 
   logout() {

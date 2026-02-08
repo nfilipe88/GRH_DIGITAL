@@ -1,5 +1,8 @@
 export interface LoginResponse {
   token: string;
-  role: 'GestorMaster' | 'TenantAdmin' | 'Colaborador';
-  displayName: string;
+  mustChangePassword: boolean;
+  // role: 'GestorMaster' | 'TenantAdmin' | 'Colaborador';
+  // displayName: string;
+  nomeUser?: string;
+  email?: string;
 }

@@ -75,7 +75,7 @@
         <div>
           <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Departamentos</p>
           <p class="text-2xl font-bold text-slate-800 dark:text-white">
-             {{ chartData.length || 0 }}
+             {{ doughnutChartData.datasets[0].data.length || 0 }}
           </p>
         </div>
       </div>
@@ -97,17 +97,13 @@
       <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
         <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-6">Distribuição por Departamento</h3>
 
-        <div class="h-80 w-full" *ngIf="chartData.length > 0; else noData">
-           <ngx-charts-pie-chart
-            [scheme]="colorScheme"
-            [results]="chartData"
-            [gradient]="false"
-            [legend]="true"
-            [legendTitle]="'Departamentos'"
-            [labels]="true"
-            [doughnut]="true"
-            [arcWidth]="0.4">
-          </ngx-charts-pie-chart>
+        <div class="h-80 w-full" *ngIf="doughnutChartData.datasets[0].data.length > 0; else noData">
+           <canvas
+            baseChart
+            [data]="doughnutChartData"
+            [type]="doughnutChartType"
+            [options]="doughnutChartOptions">
+          </canvas>
         </div>
 
         <ng-template #noData>

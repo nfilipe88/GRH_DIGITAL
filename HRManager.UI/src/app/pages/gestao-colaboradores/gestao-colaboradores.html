@@ -22,7 +22,10 @@
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+            <!-- Mostrar Instituição apenas para GestorMaster -->
+            @if (isMaster()) {
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Instituição</th>
+            }
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
@@ -31,8 +34,11 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr *ngFor="let col of listaColaboradores">
             <td class="px-6 py-4 whitespace-nowrap">{{ col.nomeCompleto }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ col.emailPessoal }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ col.email }}</td>
+            <!-- Mostrar coluna Instituição apenas para GestorMaster -->
+            @if (isMaster()) {
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ col.nomeInstituicao }}</td>
+            }
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ col.cargo }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
@@ -54,7 +60,8 @@
     </div>
   </div>
 
-  <div *ngIf="isModalAberto" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50  backdrop-blur-sm">
+  <div *ngIf="isModalAberto"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50  backdrop-blur-sm">
     <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
 
       <h3 class="text-lg font-semibold mb-4">

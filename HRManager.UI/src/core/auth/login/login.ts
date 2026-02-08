@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
+import { TokeService } from '../toke-service';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +23,7 @@ export class Login {
 
   private authService = inject(AuthService);
   private router = inject(Router);
+  private tokenService = inject(TokeService);
 
   /**
    * Chamado quando o formulário é submetido
@@ -36,8 +38,18 @@ export class Login {
     this.errorMessage = null;
 
     this.authService.login(this.credentials).subscribe({
-      next: () => {
+      next: (response) => {
         this.isLoading = false;
+        // --- Lógica de verificação da password ---
+        if (response.mustChangePassword) {
+          // Redireciona para alterar a password e passa o email no "state"
+          this.router.navigate(['/alterar-password'], {
+            state: { email: this.credentials.email }
+          });
+          return; // Para aqui, não faz o resto do login normal
+        }
+        // ------------------------
+        this.tokenService.saveToken(response.token);
         // SUCESSO! Redirecionar para a página principal da app
         this.router.navigate(['/dashboard']);
       },
